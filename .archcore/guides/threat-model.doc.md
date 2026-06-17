@@ -52,7 +52,7 @@ malware / compromised age / hostile shell on a local machine · terminal or brow
 | Token theft from DB | tokens stored hashed; short grant window |
 
 ### Residual risks (accepted, documented)
-- Anyone with the **full URL incl. fragment** can decrypt → "treat the link like a secret"; mitigated later by recipient-key mode ([[roadmap]]).
+- Anyone with the **full URL incl. fragment** can decrypt → "treat the link like a secret". This is the deliberate cost of zero-setup link-key sharing ([[e2ee-link-key-model]]).
 - The backend learns coarse metadata (sizes, timing, frequency).
 - Endpoints to local plaintext (agents, disk) are out of scope by design.
 

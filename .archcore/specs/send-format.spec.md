@@ -9,7 +9,7 @@ Define the normative format of a **send** (`send.v1`): its parts, manifests, enc
 
 ## Scope
 
-Covers the local plaintext workdir, part kinds/ids, the encrypted private `manifest`, server-visible public metadata, the compress→encrypt pipeline, checksums, versioning, and the `compact` template. Excludes transport ([[backend-http-api]]) and command UX ([[cli-contract]]). Caps live in [[size-limits]]; content rules in [[content-policy]].
+Covers the local plaintext workdir, part kinds/ids, the encrypted private `manifest`, server-visible public metadata, the compress→encrypt pipeline, checksums, versioning, and the `compact` template. Excludes transport ([[backend-http-api]]) and skill UX ([[skill-contract]]). Caps live in [[size-limits]]; content rules in [[content-policy]].
 
 ## Normative Behavior
 
@@ -104,7 +104,7 @@ Returned by `GET /v1/sends/{id}` — no semantics:
 
 ### Loader behavior
 - A loader MUST fetch and decrypt `manifest` first, then `compact` plus parts with `load_by_default: true`.
-- A loader MUST NOT auto-fetch `load_by_default: false` parts; those load only via `--load-detail` ([[cli-contract]]).
+- A loader MUST NOT auto-fetch `load_by_default: false` parts; those load only via `--load-detail` ([[skill-contract]]).
 
 ## Constraints
 - Per-part and per-send size caps are normative in [[size-limits]]; enforced client-side before upload AND server-side on upload.

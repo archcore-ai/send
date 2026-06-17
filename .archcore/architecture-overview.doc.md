@@ -137,9 +137,10 @@ stateDiagram-v2
 
 ### Where to look
 
-- Contracts: [[send-format]], [[backend-http-api]], [[cli-contract]], [[error-catalog]]
+- Contracts: [[send-format]], [[backend-http-api]], [[skill-contract]], [[error-catalog]]
 - Rules: [[security-privacy]], [[content-policy]], [[size-limits]]
 - Build: [[skill-implementation]], [[server-implementation]], [[self-host-deploy]]
+- Conventions & packaging: [[repo-layout-and-skill-packaging]], [[go-server-conventions]], [[skill-scripting-conventions]], [[testing]]
 - Risk: [[threat-model]]
 
 ## Examples

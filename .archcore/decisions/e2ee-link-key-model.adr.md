@@ -19,12 +19,12 @@ Use **`age`** in **link-key mode**:
 Rules:
 
 - **Compress then encrypt** per part (`gzip → age`). Never compress ciphertext.
-- Default fragment encoding `#agekey=<age-secret>`; fall back to `#k=<base64url>` only if shell quoting/length forces it (see [[cli-contract]]).
+- Default fragment encoding `#agekey=<age-secret>`; fall back to `#k=<base64url>` only if shell quoting/length forces it (see [[skill-contract]]).
 - The server only ever sees `/{id}` paths and ciphertext.
 
 ## Alternatives
 
-- **Recipient public-key mode** (`--to bob`): stronger (link alone cannot decrypt) but needs key management/identity setup. Deferred to v1 ([[roadmap]]).
+- **Recipient public-key mode** (`--to bob`): stronger (link alone cannot decrypt) but needs key management/identity setup. Out of scope — it adds the identity surface the link-key model deliberately avoids.
 - **Password-derived key (scrypt)**: weaker (user-chosen entropy) and adds UX friction. Rejected for v0.
 - **Server-side key escrow / KMS**: breaks zero-knowledge. Rejected.
 - **WebCrypto / AES-GCM via Node**: forces a JS runtime and is less auditable than a narrow purpose-built tool. Rejected ([[age-dependency-no-bundled-binary]]).
@@ -34,4 +34,3 @@ Rules:
 - Anyone with the **full URL including the fragment** can decrypt → "treat the full link like a secret." Stated honestly in [[threat-model]].
 - Scripts MUST parse the fragment locally and never transmit it ([[security-privacy]], SR-2). This forbids a remote MCP "load" path.
 - The entire crypto surface is `age` + `gzip` — easy to audit; satisfies [[zero-knowledge-backend]].
-- Migrating to recipient-key mode later changes only key handling, not the [[send-format]] or [[backend-http-api]].

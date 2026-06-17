@@ -3,18 +3,19 @@ title: "Send Error Catalog (client + server)"
 status: accepted
 ---
 
+
 ## Purpose
 
 Single source of truth for error codes across the client scripts and the server — status, message intent, and remediation — so the two never diverge. Keywords per RFC 2119.
 
 ## Scope
 
-Client-side (script) error objects, server-side HTTP errors, the mapping between them, and error-logging rules. Referenced by [[cli-contract]], [[backend-http-api]], [[security-privacy]], [[content-policy]].
+Client-side (script) error objects, server-side HTTP errors, the mapping between them, and error-logging rules. Referenced by [[skill-contract]], [[backend-http-api]], [[security-privacy]], [[content-policy]].
 
 ## Normative Behavior
 
 ### Client error objects
-Shape: `{ "ok":false, "error_code":"…", "message":"…", "remediation":"…" }`, with an exit code per [[cli-contract]].
+Shape: `{ "ok":false, "error_code":"…", "message":"…", "remediation":"…" }`, with an exit code per [[skill-contract]].
 
 | error_code | When | exit | Remediation |
 |---|---|---|---|
@@ -35,6 +36,7 @@ Shape: `{ "error_code":"…", "message":"…" }` + HTTP status.
 | status | error_code | When |
 |---|---|---|
 | 400 | `BAD_REQUEST` / `INCOMPLETE` | invalid metadata / finalize before all parts uploaded |
+| 401 | `UNAUTHORIZED` | `SEND_TEAM_TOKEN` set but the write request (create/upload/finalize) carried no / a wrong team token |
 | 403 | `INVALID_REDEEM` | missing / expired / invalid grant token |
 | 404 | `SEND_NOT_FOUND` | unknown or deleted id |
 | 409 | `SEND_FINALIZED` | mutate after finalize / upload to a non-`creating` send |

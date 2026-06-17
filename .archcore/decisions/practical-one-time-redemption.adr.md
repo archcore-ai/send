@@ -19,7 +19,7 @@ User-facing wording: *"The link opens once. After opening, parts stay available 
 
 ## Alternatives
 
-- **Strict one-time** (consume on first part GET): simple and strong-sounding, but hostile to staged loads and fragile under network loss. Rejected as the default; may later be offered as an opt-in flag.
+- **Strict one-time** (consume on first part GET): simple and strong-sounding, but hostile to staged loads and fragile under network loss. Rejected as the default.
 
 ## Consequences
 

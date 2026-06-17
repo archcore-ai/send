@@ -19,11 +19,6 @@
     },
     {
       "source": "guides/skill-implementation.guide.md",
-      "target": "specs/cli-contract.spec.md",
-      "type": "implements"
-    },
-    {
-      "source": "guides/skill-implementation.guide.md",
       "target": "specs/send-format.spec.md",
       "type": "implements"
     },
@@ -48,29 +43,9 @@
       "type": "depends_on"
     },
     {
-      "source": "specs/cli-contract.spec.md",
-      "target": "decisions/age-dependency-no-bundled-binary.adr.md",
-      "type": "depends_on"
-    },
-    {
       "source": "specs/backend-http-api.spec.md",
       "target": "decisions/storage-abstraction.adr.md",
       "type": "depends_on"
-    },
-    {
-      "source": "roadmap.idea.md",
-      "target": "archcore-send.prd.md",
-      "type": "extends"
-    },
-    {
-      "source": "roadmap.idea.md",
-      "target": "decisions/e2ee-link-key-model.adr.md",
-      "type": "extends"
-    },
-    {
-      "source": "roadmap.idea.md",
-      "target": "decisions/storage-abstraction.adr.md",
-      "type": "extends"
     },
     {
       "source": "architecture-overview.doc.md",
@@ -85,11 +60,6 @@
     {
       "source": "specs/error-catalog.spec.md",
       "target": "specs/backend-http-api.spec.md",
-      "type": "related"
-    },
-    {
-      "source": "specs/error-catalog.spec.md",
-      "target": "specs/cli-contract.spec.md",
       "type": "related"
     },
     {
@@ -158,8 +128,93 @@
       "type": "related"
     },
     {
-      "source": "specs/cli-contract.spec.md",
+      "source": "guides/skill-implementation.guide.md",
+      "target": "specs/skill-contract.spec.md",
+      "type": "implements"
+    },
+    {
+      "source": "specs/skill-contract.spec.md",
+      "target": "decisions/age-dependency-no-bundled-binary.adr.md",
+      "type": "depends_on"
+    },
+    {
+      "source": "specs/error-catalog.spec.md",
+      "target": "specs/skill-contract.spec.md",
+      "type": "related"
+    },
+    {
+      "source": "specs/skill-contract.spec.md",
       "target": "rules/security-privacy.rule.md",
+      "type": "related"
+    },
+    {
+      "source": "decisions/repo-layout-and-skill-packaging.adr.md",
+      "target": "decisions/age-dependency-no-bundled-binary.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "decisions/repo-layout-and-skill-packaging.adr.md",
+      "target": "decisions/go-single-binary-server.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "guides/skill-implementation.guide.md",
+      "target": "decisions/repo-layout-and-skill-packaging.adr.md",
+      "type": "depends_on"
+    },
+    {
+      "source": "guides/skill-implementation.guide.md",
+      "target": "rules/skill-scripting-conventions.rule.md",
+      "type": "depends_on"
+    },
+    {
+      "source": "guides/server-implementation.guide.md",
+      "target": "rules/go-server-conventions.rule.md",
+      "type": "depends_on"
+    },
+    {
+      "source": "rules/go-server-conventions.rule.md",
+      "target": "decisions/go-single-binary-server.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/skill-scripting-conventions.rule.md",
+      "target": "decisions/age-dependency-no-bundled-binary.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/testing.rule.md",
+      "target": "guides/server-implementation.guide.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/testing.rule.md",
+      "target": "guides/skill-implementation.guide.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/testing.rule.md",
+      "target": "rules/security-privacy.rule.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/go-server-conventions.rule.md",
+      "target": "rules/testing.rule.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/skill-scripting-conventions.rule.md",
+      "target": "rules/testing.rule.md",
+      "type": "related"
+    },
+    {
+      "source": "agent-skills-compatibility.doc.md",
+      "target": "guides/skill-implementation.guide.md",
+      "type": "related"
+    },
+    {
+      "source": "agent-skills-compatibility.doc.md",
+      "target": "decisions/repo-layout-and-skill-packaging.adr.md",
       "type": "related"
     }
   ]

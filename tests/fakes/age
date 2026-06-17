@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""Deterministic fake `age` for skill tests when real age is unavailable.
+
+Encryption/decryption are identity passthroughs (binary-safe), so a gzip stream
+survives a round-trip exactly. This validates the skill's orchestration, not the
+real crypto (covered separately when real `age` is on PATH).
+"""
+import sys
+
+args = sys.argv[1:]
+if "--version" in args:
+    print("1.2.0-fake")
+    sys.exit(0)
+
+# -d => decrypt; otherwise encrypt (-r <recipient>). Both are identity here.
+data = sys.stdin.buffer.read()
+sys.stdout.buffer.write(data)
+sys.stdout.buffer.flush()

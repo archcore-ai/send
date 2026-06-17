@@ -1,0 +1,28 @@
+# Temp / build
+*.tmp
+*.tmp.*
+*.log
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Test artifacts
+tests/.tmp/
+/tmp-send-*/
+
+# Go server build + local data
+tests/bin/
+server/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Local crypto material — must NEVER be committed
+*.age
+*.agekey
+id_rsa
+*.pem
+*.key
+.env

@@ -3,6 +3,7 @@ title: "Send Server HTTP API Specification (v1)"
 status: accepted
 ---
 
+
 ## Purpose
 
 Normative HTTP contract between the Send skill and the Send server under `/v1`. Storage-agnostic and zero-knowledge: payloads are opaque ciphertext plus minimal metadata. Keywords per RFC 2119.
@@ -17,7 +18,7 @@ Endpoints, request/response schemas, headers, status codes, lifecycle, redemptio
 - Base path `/v1`. JSON for metadata; `application/octet-stream` for part bytes.
 - Send ids: `snd_` + sortable random (ULID-style), unguessable. Public URL `…/s/{id}`.
 - The URL **fragment is never part of any request** ([[security-privacy]]).
-- Auth v0: anonymous link mode. Optional `Authorization: Bearer <team-token>` for self-host team mode.
+- Auth v0: anonymous link mode — the unguessable id + `#agekey` fragment is the capability. When `SEND_TEAM_TOKEN` is set (self-host team mode), the **write** endpoints (create, upload, finalize) MUST carry `Authorization: Bearer <team-token>`, compared in constant time; missing or wrong → `401 UNAUTHORIZED`. Read/redeem/download stay anonymous — the redeem grant is their gate, so the team token MUST NOT be sent on those.
 
 ### Endpoints
 
@@ -37,7 +38,7 @@ Endpoints, request/response schemas, headers, status codes, lifecycle, redemptio
   "public_url":"https://send.example.com/s/snd_01J...",
   "expires_at":"2026-06-12T12:00:00Z", "one_time":true }
 ```
-Server MUST validate `ttl ≤ max`, each `encrypted_size ≤ cap`, `part_count ≤ max` → else `400`/`413`. Status becomes `creating`.
+Server MUST validate `ttl ≤ max`, each `encrypted_size ≤ cap`, `part_count ≤ max` → else `400`/`413`. In team mode it MUST reject before validation with `401` when the team token is absent/wrong. Status becomes `creating`.
 
 **Upload part** — `PUT /v1/sends/{id}/parts/{part_id}`, body = ciphertext, headers `Content-Type: application/octet-stream`, `X-Send-Ciphertext-Sha256: <hex>`.
 → `200 {"ok":true,"part_id":"part_0001","encrypted_size":28412}`
@@ -60,7 +61,7 @@ Server MUST validate `ttl ≤ max`, each `encrypted_size ≤ cap`, `part_count �
 **Download part** — `GET /v1/sends/{id}/parts/{part_id}` with `Authorization: Bearer red_…` (or `?redeem_token=`) → `200 application/octet-stream` ciphertext.
 - Requires a valid, unexpired grant; else `403 INVALID_REDEEM`. Within the grant, any part may be fetched repeatedly (supports lazy details) until expiry.
 
-**Delete / revoke (optional)** — `DELETE /v1/sends/{id}` with a management token, only if mgmt mode is enabled. v0 MAY omit ([[roadmap]]).
+**Delete / revoke (optional)** — `DELETE /v1/sends/{id}` with a management token, only if mgmt mode is enabled. v0 omits it; management/revoke is out of scope.
 
 ### Lifecycle
 ```mermaid
@@ -98,7 +99,7 @@ sequenceDiagram
 Enforce caps from [[size-limits]]; rate-limit by IP; reject oversize bodies `413`; no directory listing; unguessable ids only; reject unexpected content types.
 
 ## Constraints
-- The server MUST NOT receive or log the URL fragment, redeem tokens (store hashed), or request bodies ([[security-privacy]]).
+- The server MUST NOT receive or log the URL fragment, redeem tokens (store hashed), the team token, or request bodies ([[security-privacy]]).
 - Presigned object-storage URLs, if used, MUST be issued only **post-redeem** with a very short TTL and MUST NOT bypass one-time semantics.
 
 ## Invariants
@@ -106,9 +107,10 @@ Enforce caps from [[size-limits]]; rate-limit by IP; reject oversize bodies `413
 - **INV-2** — Part bytes download only with a valid, unexpired grant.
 - **INV-3** — Stored ciphertext sha256 == declared sha256.
 - **INV-4** — No endpoint accepts or returns plaintext or semantic part metadata.
+- **INV-5** — In team mode, no send is created, no part is uploaded, and no send is finalized without a valid team token.
 
 ## Error Handling
-Statuses used: `400, 403, 404, 409, 410, 413, 422, 429, 500`. Full mapping in [[error-catalog]].
+Statuses used: `400, 401, 403, 404, 409, 410, 413, 422, 429, 500`. Full mapping in [[error-catalog]].
 
 ## Conformance
 - [ ] atomic redeem holds under concurrent requests;
@@ -116,4 +118,5 @@ Statuses used: `400, 403, 404, 409, 410, 413, 422, 429, 500`. Full mapping in [[
 - [ ] sha256 verified on upload;
 - [ ] fragment never required server-side;
 - [ ] metadata carries no semantics;
+- [ ] team mode gates create/upload/finalize and leaves redeem/download anonymous;
 - [ ] GC deletes expired + consumed sends.

@@ -1,0 +1,14 @@
+# Caddy terminates TLS (automatic Let's Encrypt HTTP-01) and reverse-proxies to
+# sendd. SEND_DOMAIN is injected from .env via compose. HTTP-01 needs ports 80+443
+# open and the DuckDNS A record resolving to this host BEFORE first start.
+{$SEND_DOMAIN} {
+	encode gzip
+
+	# Bound request bodies a touch above SEND_MAX_TOTAL_BYTES (26214400) so the
+	# decimal/binary mismatch never causes a spurious 413 before sendd's own cap.
+	request_body {
+		max_size 27MB
+	}
+
+	reverse_proxy sendd:8080
+}

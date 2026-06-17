@@ -12,7 +12,6 @@ Implement a new `SendStore` backend (e.g. S3-compatible blob store, Postgres sta
 - Moving from filesystem to object storage for scale/durability.
 - Switching providers (Hetzner OS → DO Spaces → Tigris → B2 → S3).
 - Adding a Postgres state store for multi-node.
-- (Future) a Durable-Streams-backed store ([[roadmap]]).
 
 ## Steps
 

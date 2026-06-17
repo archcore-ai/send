@@ -5,7 +5,7 @@ status: accepted
 
 ## Context
 
-v0 should be trivially self-hostable (SQLite + filesystem) yet able to grow to hosted scale (Postgres + S3/R2) and eventually Durable Streams — **without changing `/send` UX or the public API**.
+v0 should be trivially self-hostable (SQLite + filesystem) yet able to grow to hosted scale (Postgres + S3/R2) — **without changing `/send` UX or the public API**.
 
 ## Decision
 
@@ -30,6 +30,5 @@ type SendStore interface {
 ## Consequences
 
 - Migration between Hetzner Object Storage / DO Spaces / OVH / Tigris / B2 / S3 is a **blob-impl swap** ([[self-host-deploy]]).
-- A future `DurableStreamsStore` fits the same interface ([[roadmap]]).
-- Adding a backend is a bounded, testable task ([[add-storage-backend]]).
+- Other blob/state backends fit the same interface; adding one is a bounded, testable task ([[add-storage-backend]]).
 - Slightly more upfront structure; justified by portability. Normative API stays as [[backend-http-api]].

@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://archcore.dev/send/send.v1.manifest.schema.json",
+  "title": "Send private manifest (send.v1)",
+  "description": "The encrypted, client-only semantic map for a send. Never sent to the server in clear.",
+  "type": "object",
+  "required": ["version", "title", "policy", "parts"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": "send.v1" },
+    "title": { "type": "string", "maxLength": 200 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "description": "All fields optional and omittable for privacy.",
+      "additionalProperties": false,
+      "properties": {
+        "agent": { "type": "string" },
+        "repo": { "type": "string" },
+        "branch": { "type": "string" },
+        "commit": { "type": "string" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "required": ["raw_transcript_included", "secrets_included", "default_load"],
+      "additionalProperties": false,
+      "properties": {
+        "raw_transcript_included": { "type": "boolean" },
+        "secrets_included": { "type": "boolean" },
+        "default_load": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "transport_id", "kind", "required", "load_by_default", "plaintext_size"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "description": "semantic id, e.g. compact, evidence.errors, detail.full-diff" },
+          "transport_id": { "type": "string", "pattern": "^part_[0-9]{4}$" },
+          "kind": { "enum": ["manifest", "markdown", "patch", "log", "json", "text", "binary"] },
+          "required": { "type": "boolean" },
+          "load_by_default": { "type": "boolean" },
+          "plaintext_size": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

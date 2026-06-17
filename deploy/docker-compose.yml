@@ -1,0 +1,39 @@
+# Public Archcore Send instance: the Go server behind Caddy (automatic TLS).
+# Copy .env.example to .env, set SEND_DOMAIN + SEND_PUBLIC_URL, then: docker compose up -d
+services:
+  sendd:
+    build:
+      context: ../server
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT: ${COMMIT:-none}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # We sit behind Caddy: bind internally and trust its forwarded headers.
+      SEND_LISTEN: ":8080"
+      SEND_TRUST_PROXY: "true"
+    volumes:
+      - send-data:/data
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - sendd
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SEND_DOMAIN: ${SEND_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  send-data:
+  caddy-data:
+  caddy-config:

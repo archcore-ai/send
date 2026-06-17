@@ -9,14 +9,14 @@ Add a new part kind (e.g. `evidence.coverage`, `detail.trace`) end-to-end across
 
 ## When
 
-- A recurring evidence/detail category emerges (coverage reports, profiling traces, screenshots-as-attachments later).
+- A recurring evidence/detail category emerges (coverage reports, profiling traces, screenshots).
 - You need different default-load or size behavior for a content class.
 
 ## Steps
 
 1. Classify: required + `load_by_default` (evidence) vs optional/lazy (detail). Default large/raw → `detail.*` ([[content-policy]], [[size-limits]]).
 2. Extend the `kind` enum + private-manifest handling in [[send-format]] (transport id stays opaque `part_NNNN`).
-3. Update the skill's send-mode instructions to populate the new part, and the preview to disclose it ([[skill-implementation]], [[cli-contract]] UX-1).
+3. Update the skill's send-mode instructions to populate the new part, and the preview to disclose it ([[skill-implementation]], [[skill-contract]] UX-1).
 4. Set caps/behavior in [[size-limits]] if they differ.
 5. Ensure load-mode honors `load_by_default`; lazy parts load only via `--load-detail`.
 6. The **server needs no change** — it stores opaque bytes ([[zero-knowledge-backend]]). If you feel tempted to special-case the kind server-side, stop: that violates zero-knowledge.

@@ -20,7 +20,7 @@ status: accepted
   full customer PII · full raw logs (unless explicitly asked) · generated/minified/lock files
   ```
 - **R4 — Compact-first content.** `compact` carries structured working context (goal, state, hypothesis, decisions, files, errors, next steps), not raw transcript. Large diffs/logs are `detail.*` (optional), never inlined into compact ([[size-limits]]).
-- **R5 — Preview discloses.** The send preview MUST list included / optional / skipped items and state that the server receives ciphertext only ([[cli-contract]] UX-1).
+- **R5 — Preview discloses.** The send preview MUST list included / optional / skipped items and state that the server receives ciphertext only ([[skill-contract]] UX-1).
 
 ### Secret patterns (minimum set)
 ```text

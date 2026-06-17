@@ -8,7 +8,7 @@ status: draft
 - `age` installed (client crypto); `curl` + `gzip` (or PowerShell equivalents).
 - A reachable Send server ([[backend-http-api]]); default via `SEND_SERVER_URL`.
 - Familiarity with the Agent Skills format (`SKILL.md` + scripts/references/assets).
-- Contracts to obey: [[cli-contract]], [[send-format]]. Rules: [[content-policy]], [[security-privacy]], [[size-limits]].
+- Contracts to obey: [[skill-contract]], [[send-format]]. Rules: [[content-policy]], [[security-privacy]], [[size-limits]].
 
 ## Steps
 
@@ -59,7 +59,7 @@ On `/send --load <url>`:
 On `/send --load-detail <url> <part-id>`: run the script, summarize if large, avoid dumping huge logs/diffs into context.
 
 ### 6. Script responsibilities (`send.sh` / `send.ps1`)
-Per [[cli-contract]]: locate `age`/`curl`/`gzip`; secret-scan ([[content-policy]]); size-check ([[size-limits]]); `gzip`+`age` per part; keygen ephemeral identity; create/upload/finalize via [[backend-http-api]]; append `#agekey` locally; on load — redeem, download, decrypt; emit one JSON object on stdout; clean temp files ([[security-privacy]]). **Non-responsibilities:** no summarization, no arbitrary repo reads, no project mutation.
+Per [[skill-contract]]: locate `age`/`curl`/`gzip`; secret-scan ([[content-policy]]); size-check ([[size-limits]]); `gzip`+`age` per part; keygen ephemeral identity; create/upload/finalize via [[backend-http-api]]; append `#agekey` locally; on load — redeem, download, decrypt; emit one JSON object on stdout; clean temp files ([[security-privacy]]). **Non-responsibilities:** no summarization, no arbitrary repo reads, no project mutation.
 
 ### 7. OpenCode / other agents
 Optional shim `.opencode/commands/send.md` that tells OpenCode to use the `send` skill with the given args. Source of truth stays `send/SKILL.md` ([[archcore-send]] PORT-2).

@@ -1,0 +1,102 @@
+#!/usr/bin/env bats
+# End-to-end + security tests: send -> load round-trip against the python mock.
+
+bats_require_minimum_version 1.5.0
+
+load helper
+
+setup() {
+  use_fake_age_if_needed
+  isolate_tmp
+  start_mock
+}
+
+teardown() {
+  stop_mock
+}
+
+# Capture a finalized send URL into $URL (one-time default).
+do_send() {
+  wd="$(make_workdir)"
+  run --separate-stderr bash "$SEND_SH" send "$wd" --yes --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  URL="$(echo "$output" | jq -r '.url')"
+}
+
+@test "send: finalizes and returns a URL carrying the #agekey fragment" {
+  do_send
+  echo "$output" | jq -e '.ok == true and .one_time == true' >/dev/null
+  [[ "$URL" == *"/s/snd_"* ]]
+  [[ "$URL" == *"#agekey="* ]]
+}
+
+@test "load: compact-first round-trip returns compact + evidence, lists detail" {
+  do_send
+  run --separate-stderr bash "$SEND_SH" load "$URL" --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.ok == true' >/dev/null
+  echo "$output" | jq -e '.compact_context | test("Auth debugging handoff")' >/dev/null
+  echo "$output" | jq -e '.required_evidence | map(.part_id) | index("evidence.errors") != null' >/dev/null
+  echo "$output" | jq -e '.available_details | map(.part_id) | index("detail.full-diff") != null' >/dev/null
+}
+
+@test "INV-2: load never fetches a load_by_default:false detail part" {
+  do_send
+  : > "$MOCK_LOG"  # focus the log on the load phase
+  run --separate-stderr bash "$SEND_SH" load "$URL" --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  # compact=part_0001, evidence.errors=part_0002, detail.full-diff=part_0003
+  run grep -F "GET /v1/sends/" "$MOCK_LOG"
+  [[ "$output" == *"part_0001"* ]]   # compact fetched
+  [[ "$output" == *"part_0002"* ]]   # evidence fetched
+  [[ "$output" != *"part_0003"* ]]   # detail NOT fetched
+}
+
+@test "SECURITY: the #agekey fragment never appears in any request to the server" {
+  do_send
+  run --separate-stderr bash "$SEND_SH" load "$URL" --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  run grep -i "agekey" "$MOCK_LOG"
+  [ "$status" -ne 0 ]   # no match
+}
+
+@test "load-detail: lazily fetches the optional detail within the grant window" {
+  do_send
+  run --separate-stderr bash "$SEND_SH" load "$URL" --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  run --separate-stderr bash "$SEND_SH" load-detail "$URL" detail.full-diff --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.part_id == "detail.full-diff"' >/dev/null
+  echo "$output" | jq -e '.content | test("authcache.go")' >/dev/null
+}
+
+@test "one-time: a fresh redeem after the link was consumed is rejected" {
+  do_send
+  run --separate-stderr bash "$SEND_SH" load "$URL" --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  # Drop the cached grant so the next load must redeem again (and be refused).
+  rm -rf "$TMPDIR/archcore-send-grants"
+  run --separate-stderr bash "$SEND_SH" load "$URL" --server "$SERVER_URL"
+  [ "$status" -eq 6 ]
+  echo "$output" | jq -e '.error_code == "SEND_ALREADY_REDEEMED"' >/dev/null
+}
+
+@test "SECURITY: temp plaintext + ephemeral identity are gone after a send" {
+  before="$(find "$TMPDIR" -maxdepth 1 -name 'archcore-send.*' 2>/dev/null | wc -l | tr -d ' ')"
+  do_send
+  after="$(find "$TMPDIR" -maxdepth 1 -name 'archcore-send.*' 2>/dev/null | wc -l | tr -d ' ')"
+  [ "$after" -le "$before" ]
+}
+
+@test "integrity: a non-one-time send supports repeated independent loads" {
+  wd="$(make_workdir)"
+  run --separate-stderr bash "$SEND_SH" send "$wd" --yes --no-one-time --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  url="$(echo "$output" | jq -r '.url')"
+  rm -rf "$TMPDIR/archcore-send-grants"
+  run --separate-stderr bash "$SEND_SH" load "$url" --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  rm -rf "$TMPDIR/archcore-send-grants"
+  run --separate-stderr bash "$SEND_SH" load "$url" --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+}

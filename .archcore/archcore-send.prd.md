@@ -32,7 +32,7 @@ There is no lightweight, privacy-preserving way to move *structured working cont
 4. The whole client is auditable: readable scripts, no bundled binary, no Python/Node runtime.
 5. Anyone can self-host the server with a single container.
 
-**Non-goals (v0)** — explicitly out of scope; tracked in [[roadmap]].
+**Non-goals (v0)** — explicitly out of scope:
 
 - collaborative workspace / live shared session / CRDT;
 - permanent team memory or semantic search;
@@ -58,10 +58,10 @@ Requirements are normative for v0. Each maps to a spec/rule/guide that defines i
 
 **Functional (FR)**
 
-- **FR-1** — `/send` builds a structured send from the current session and uploads encrypted parts. → [[send-format]], [[cli-contract]]
-- **FR-2** — `/send --load <url>` loads manifest + compact + required evidence by default; lists optional details without injecting them. → [[cli-contract]]
-- **FR-3** — `/send --load-detail <url> <part-id>` lazy-loads a single optional part. → [[cli-contract]]
-- **FR-4** — `/send --doctor` diagnoses the environment (age, curl/gzip, connectivity). → [[cli-contract]]
+- **FR-1** — `/send` builds a structured send from the current session and uploads encrypted parts. → [[send-format]], [[skill-contract]]
+- **FR-2** — `/send --load <url>` loads manifest + compact + required evidence by default; lists optional details without injecting them. → [[skill-contract]]
+- **FR-3** — `/send --load-detail <url> <part-id>` lazy-loads a single optional part. → [[skill-contract]]
+- **FR-4** — `/send --doctor` diagnoses the environment (age, curl/gzip, connectivity). → [[skill-contract]]
 - **FR-5** — Sends are multipart; each part is compressed then encrypted independently. → [[multipart-send-format]], [[send-format]]
 - **FR-6** — Sends expire (TTL) and are one-time by default (practical one-time redemption). → [[practical-one-time-redemption]], [[backend-http-api]]
 

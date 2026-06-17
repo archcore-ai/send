@@ -23,7 +23,8 @@ The client depends on exactly one external crypto tool — **`age`** (user-insta
 
 ## Consequences
 
-- `/send --doctor` must detect and guide `age` installation per-OS ([[cli-contract]], [[error-catalog]]).
+- `/send --doctor` must detect and guide `age` installation per-OS ([[skill-contract]], [[error-catalog]]).
 - Users/enterprises can pin the skill version, audit scripts, and install `age` via internal channels.
 - Portability cost: Windows needs `age.exe`, handled in `send.ps1` ([[skill-implementation]]).
+- The skill contains **no compiled code at all** — Go is confined to the server ([[repo-layout-and-skill-packaging]]).
 - Reinforces the auditable trust story of [[security-privacy]].

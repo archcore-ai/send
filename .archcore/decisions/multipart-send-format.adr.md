@@ -27,5 +27,5 @@ Each part is **independently gzipped then `age`-encrypted** and uploaded/downloa
 
 - Enables **compact-first loading** and lazy details → bounded recipient context (a core [[archcore-send]] metric).
 - Requires a part registry and **practical one-time redemption** ([[practical-one-time-redemption]]).
-- Slightly more API surface (per-part upload/download), but a clean future mapping to Durable-Streams events ([[roadmap]]).
+- Slightly more API surface (per-part upload/download) — justified by staged loading and bounded recipient context.
 - The server treats parts as opaque blobs; semantic mapping lives only in the encrypted `manifest` ([[zero-knowledge-backend]]).
