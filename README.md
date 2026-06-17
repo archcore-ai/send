@@ -39,4 +39,4 @@ under `.archcore/specs/`.
 
 ## License
 
-[MIT](LICENSE).
+[Apache 2.0](LICENSE).
