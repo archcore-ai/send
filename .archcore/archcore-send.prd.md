@@ -116,7 +116,7 @@ They communicate only over the HTTP API in [[backend-http-api]], exchanging ciph
 | Storage | `SendStore` abstraction; SQLite + FS first | [[storage-abstraction]] |
 | Server stack | Go, single static binary | [[go-single-binary-server]] |
 | Dependency | `age` only; no bundled binary | [[age-dependency-no-bundled-binary]] |
-| Hosting | self-host-first; Hetzner default; avoid Cloudflare-sole-endpoint (RF) | [[hosting-posture-rf-availability]] |
+| Hosting | self-host-first; provider-agnostic; no single managed edge as sole endpoint | [[hosting-posture-availability]] |
 | Naming | `/send` command; "send" artifact | this PRD |
 
 ## Acceptance criteria (v0 done)

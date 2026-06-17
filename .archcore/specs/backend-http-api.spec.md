@@ -4,6 +4,7 @@ status: accepted
 ---
 
 
+
 ## Purpose
 
 Normative HTTP contract between the Send skill and the Send server under `/v1`. Storage-agnostic and zero-knowledge: payloads are opaque ciphertext plus minimal metadata. Keywords per RFC 2119.
@@ -42,6 +43,7 @@ Server MUST validate `ttl ≤ max`, each `encrypted_size ≤ cap`, `part_count �
 
 **Upload part** — `PUT /v1/sends/{id}/parts/{part_id}`, body = ciphertext, headers `Content-Type: application/octet-stream`, `X-Send-Ciphertext-Sha256: <hex>`.
 → `200 {"ok":true,"part_id":"part_0001","encrypted_size":28412}`
+- Server MUST reject a missing or malformed `X-Send-Ciphertext-Sha256` (not 64 hex chars) with `400 BAD_REQUEST` before reading the body.
 - Server MUST verify byte count + sha256 vs declared; mismatch → `422 INTEGRITY_FAILED`.
 - Idempotent: identical re-PUT (same sha256) MUST succeed.
 - Upload to a non-`creating` send → `409`.
@@ -58,7 +60,8 @@ Server MUST validate `ttl ≤ max`, each `encrypted_size ≤ cap`, `part_count �
 - Expired → `410 SEND_EXPIRED`; not finalized → `409`; unknown → `404`.
 - The server stores only the **hash** of `redeem_token` ([[security-privacy]]).
 
-**Download part** — `GET /v1/sends/{id}/parts/{part_id}` with `Authorization: Bearer red_…` (or `?redeem_token=`) → `200 application/octet-stream` ciphertext.
+**Download part** — `GET /v1/sends/{id}/parts/{part_id}` with `Authorization: Bearer red_…` → `200 application/octet-stream` ciphertext.
+- The grant MUST be sent as a Bearer header only — it is never accepted as a query parameter, so it cannot leak via proxy access logs, browser history, or Referer headers.
 - Requires a valid, unexpired grant; else `403 INVALID_REDEEM`. Within the grant, any part may be fetched repeatedly (supports lazy details) until expiry.
 
 **Delete / revoke (optional)** — `DELETE /v1/sends/{id}` with a management token, only if mgmt mode is enabled. v0 omits it; management/revoke is out of scope.
@@ -68,7 +71,7 @@ Server MUST validate `ttl ≤ max`, each `encrypted_size ≤ cap`, `part_count �
 stateDiagram-v2
   [*] --> creating: POST /v1/sends
   creating --> finalized: finalize
-  creating --> deleted: GC unfinished (> 1h)
+  creating --> deleted: GC unfinished (> 15m)
   finalized --> consumed: first redeem
   finalized --> expired: TTL passes
   consumed --> expired: TTL passes
@@ -96,7 +99,7 @@ sequenceDiagram
 ```
 
 ### Limits & abuse
-Enforce caps from [[size-limits]]; rate-limit by IP; reject oversize bodies `413`; no directory listing; unguessable ids only; reject unexpected content types.
+Enforce caps from [[size-limits]]; rate-limit by IP on writes **and** on redeem/download/metadata; reject oversize bodies `413`; no directory listing; unguessable ids only; reject unexpected content types.
 
 ## Constraints
 - The server MUST NOT receive or log the URL fragment, redeem tokens (store hashed), the team token, or request bodies ([[security-privacy]]).

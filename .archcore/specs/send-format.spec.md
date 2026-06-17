@@ -77,12 +77,13 @@ Returned by `GET /v1/sends/{id}` — no semantics:
   "id": "snd_01J...", "status": "finalized", "one_time": true,
   "expires_at": "2026-06-12T12:00:00Z", "part_count": 3, "total_encrypted_size": 2133644,
   "parts": [
-    { "part_id": "manifest",  "encrypted_size": 1200,    "sha256": "..." },
-    { "part_id": "part_0001", "encrypted_size": 28412,   "sha256": "..." },
-    { "part_id": "part_0003", "encrypted_size": 2104032, "sha256": "..." }
+    { "part_id": "manifest",  "encrypted_size": 1200 },
+    { "part_id": "part_0001", "encrypted_size": 28412 },
+    { "part_id": "part_0003", "encrypted_size": 2104032 }
   ]
 }
 ```
+Per-part `sha256` is **not** exposed here (metadata minimization): the client verifies integrity by decrypting, and the server checks stored bytes against the create-declared sha256 on upload.
 
 ### `compact.md` template
 ```md
@@ -114,7 +115,7 @@ Returned by `GET /v1/sends/{id}` — no semantics:
 - **INV-1** — The server reconstructs nothing semantic from public metadata alone.
 - **INV-2** — `manifest` is always present and required.
 - **INV-3** — Every non-`manifest` part has a unique `part_NNNN` transport id and a unique semantic id.
-- **INV-4** — `ciphertext_sha256` in public metadata matches stored bytes.
+- **INV-4** — Stored ciphertext sha256 matches the sha256 the client declared at create time (verified on upload); the digest is not exposed in public metadata.
 
 ## Error Handling
 - Unknown version → `UNSUPPORTED_VERSION`; missing `manifest` → `DECRYPTION_FAILED`; hash mismatch → `INTEGRITY_FAILED`. See [[error-catalog]].

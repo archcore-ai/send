@@ -34,11 +34,6 @@
     },
     {
       "source": "guides/self-host-deploy.guide.md",
-      "target": "decisions/hosting-posture-rf-availability.adr.md",
-      "type": "implements"
-    },
-    {
-      "source": "guides/self-host-deploy.guide.md",
       "target": "guides/server-implementation.guide.md",
       "type": "depends_on"
     },
@@ -216,6 +211,11 @@
       "source": "agent-skills-compatibility.doc.md",
       "target": "decisions/repo-layout-and-skill-packaging.adr.md",
       "type": "related"
+    },
+    {
+      "source": "guides/self-host-deploy.guide.md",
+      "target": "decisions/hosting-posture-availability.adr.md",
+      "type": "implements"
     }
   ]
 }
