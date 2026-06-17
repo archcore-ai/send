@@ -1,8 +1,27 @@
-# Caddy terminates TLS (automatic Let's Encrypt HTTP-01) and reverse-proxies to
-# sendd. SEND_DOMAIN is injected from .env via compose. HTTP-01 needs ports 80+443
-# open and the DuckDNS A record resolving to this host BEFORE first start.
+# Caddy terminates TLS (automatic Let's Encrypt) and reverse-proxies to sendd.
+# SEND_DOMAIN is injected from .env via compose. HTTP-01/TLS-ALPN need ports 80+443
+# open and the A record resolving to this host BEFORE first start.
+
+{
+	# The admin API can fully reconfigure Caddy at runtime; nothing here needs it,
+	# and disabling it removes a lateral-movement target inside the compose network.
+	admin off
+}
+
 {$SEND_DOMAIN} {
 	encode gzip
+
+	# Hardening headers. The only HTML served is the static landing / link pages
+	# (inline styles, no scripts, no external assets), so a strict CSP fits.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "DENY"
+		Referrer-Policy           "no-referrer"
+		Content-Security-Policy   "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+		Permissions-Policy        "geolocation=(), camera=(), microphone=()"
+		-Server
+	}
 
 	# Bound request bodies a touch above SEND_MAX_TOTAL_BYTES (26214400) so the
 	# decimal/binary mismatch never causes a spurious 413 before sendd's own cap.
@@ -10,5 +29,9 @@
 		max_size 27MB
 	}
 
-	reverse_proxy sendd:8080
+	# Replace (not append) X-Forwarded-For with the real remote address so a client
+	# cannot spoof it: sendd reads the first XFF entry to key its per-IP rate limiter.
+	reverse_proxy sendd:8080 {
+		header_up X-Forwarded-For {http.request.remote.host}
+	}
 }

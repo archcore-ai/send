@@ -12,6 +12,15 @@ it locally with `age`, uploads only ciphertext to a Send server, and returns a
 **one-time link**. The recipient runs `/send --load <url>` to pull a compact,
 high-signal context into their session. The server never sees plaintext or the key.
 
+**Working context = what this session genuinely knows.** Primarily it is what you and
+the user have been doing in *this conversation*: the goal, the current state, what was
+tried, what was decided, the errors you hit, the open questions. It **also** includes
+concrete, specific context the session has surfaced from memory/recall about ongoing
+work — a named bug, a plan, the state of a branch. That is real context, not filler.
+You build it by **summarizing what you actually know** — never by mining the repo to
+invent a narrative. Git and repo files are an *optional supplement* (to confirm the
+diff summary or which files are relevant), never the primary source.
+
 You (the agent) **assemble the plaintext workdir and write files**. The script
 (`scripts/send.sh`, or `scripts/send.ps1` on Windows) does **everything else**:
 crypto, transport, secret scanning, size checks, and temp-file hygiene. The script
@@ -54,6 +63,20 @@ The server URL comes from `SEND_SERVER_URL` (or `--server`). For team mode, set
 
 ## Send mode — assembling the workdir
 
+**Before building anything, confirm there is genuine context to package — and what.**
+The test is whether you can name something concrete (a goal, a bug, a decision, a plan,
+the state of a branch), **not** how many messages were exchanged:
+
+- **You can name it** — whether from live work this conversation *or* from memory/recall
+  about ongoing work: that is real context. Don't refuse it. Briefly **confirm scope**
+  with the user (recalled context can be broad or stale), then summarize what you
+  genuinely know into the workdir.
+- **You genuinely cannot** (cold open, nothing recalled): say there's nothing to package
+  yet and ask the user what they want to send.
+
+Either way, never **manufacture** context by digging into git/repo state to invent a
+narrative you don't actually have — git stays optional corroboration.
+
 Create a temp workdir with this exact layout (the script discovers parts by it):
 
 ```text
@@ -91,11 +114,14 @@ Write `compact.md` from this template (the first line sets the send title):
 
 Then:
 
-1. Keep `compact.md` ≤ ~30 KB (hard cap 50 KB); put large material in `details/`.
+1. Write `compact.md` by **summarizing the session** (the template sections map to it);
+   keep it ≤ ~30 KB (hard cap 50 KB) and put large material in `details/`.
 2. Put **small** excerpts (key errors, decisions, a few file snippets) in `evidence/`.
 3. Put **large** diffs/logs in `details/` — never inline them into compact.
-4. Inspect git state only when useful and permitted; never include secrets, `.env`,
-   keys, raw transcripts, or hidden reasoning (see `references/security.md`).
+4. Git is **optional corroboration only** — inspect it (when useful and permitted)
+   to fill `## Current diff summary` / `## Relevant files`, never to source the
+   context. Never include secrets, `.env`, keys, raw transcripts, or hidden reasoning
+   (see `references/security.md`).
 5. Run `bash "<skill-dir>/scripts/send.sh" send <workdir> --ttl <dur> [--one-time]`.
 6. Show the preview (stderr) and **confirm** unless `--yes` was given.
 7. Return the `url` and the `included` / `optional_parts` summary from the JSON.

@@ -14,8 +14,9 @@ import (
 )
 
 // creatingMaxAge is how long an unfinished ("creating") send may linger before GC
-// reaps it (size-limits.rule: 1h).
-const creatingMaxAge = time.Hour
+// reaps it. Kept short to bound the disk a stalled/abusive uploader can hold: a
+// whole send is <= 25 MiB and uploads in seconds, so 15m is ample for legit use.
+const creatingMaxAge = 15 * time.Minute
 
 // SQLiteState is the StateStore backed by a single cgo-free SQLite database. It
 // serializes writes via SetMaxOpenConns(1), which removes SQLITE_BUSY at the low
@@ -35,7 +36,7 @@ func OpenSQLiteState(path string, grantTTL time.Duration, now func() time.Time) 
 	// SQLite will not create missing parent directories, so the default
 	// SEND_DB_PATH=data/sends.db must work on a fresh run (mirrors fsblob).
 	if dir := filepath.Dir(path); dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return nil, fmt.Errorf("create db dir: %w", err)
 		}
 	}

@@ -75,7 +75,16 @@ func Run(ctx context.Context, version, commit string) error {
 	fmt.Printf("http://%s\n", ln.Addr().String())
 	log.Printf("sendd %s (%s) listening on http://%s", version, commit, ln.Addr())
 
-	httpSrv := &http.Server{Handler: srv, ReadHeaderTimeout: 10 * time.Second}
+	// Bound slow-loris and stuck connections. Read/Write timeouts are generous
+	// enough to stream a max-size (25 MiB) part over a slow link while still
+	// capping connections that never make progress.
+	httpSrv := &http.Server{
+		Handler:           srv,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       120 * time.Second,
+		WriteTimeout:      300 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
 	errCh := make(chan error, 1)
 	go func() { errCh <- httpSrv.Serve(ln) }()
 
