@@ -18,8 +18,9 @@ tried, what was decided, the errors you hit, the open questions. It **also** inc
 concrete, specific context the session has surfaced from memory/recall about ongoing
 work — a named bug, a plan, the state of a branch. That is real context, not filler.
 You build it by **summarizing what you actually know** — never by mining the repo to
-invent a narrative. Git and repo files are an *optional supplement* (to confirm the
-diff summary or which files are relevant), never the primary source.
+invent a narrative. Git and repo files are an *optional supplement* — only when the
+user explicitly asks for a diff — never the primary source and never a substitute for
+session memory.
 
 You (the agent) **assemble the plaintext workdir and write files**. The script
 (`scripts/send.sh`, or `scripts/send.ps1` on Windows) does **everything else**:
@@ -48,7 +49,7 @@ shorthand for exactly this invocation.
 
 | Invocation | What you do |
 |---|---|
-| `/send` | Build a workdir, then `send.sh send <workdir>` → return the link |
+| `/send` | Write one lean `compact.md`, then `send.sh send <wd> --ttl 24h --yes` → return the link |
 | `/send --inspect` | Build a workdir, then `send.sh inspect <workdir>` → preview only, no upload |
 | `/send --load <url>` | `send.sh load <url>` → import compact + required evidence |
 | `/send --load-detail <url> <part-id>` | `send.sh load-detail <url> <part-id>` → pull one optional detail |
@@ -61,73 +62,73 @@ Flags forwarded to the script: `--ttl <dur>` (default `24h`, max `7d`),
 The server URL comes from `SEND_SERVER_URL` (or `--server`). For team mode, set
 `SEND_TEAM_TOKEN` (sent as `Authorization: Bearer`).
 
-## Send mode — assembling the workdir
+## Send mode — the fast path (default)
 
-**Before building anything, confirm there is genuine context to package — and what.**
-The test is whether you can name something concrete (a goal, a bug, a decision, a plan,
-the state of a branch), **not** how many messages were exchanged:
+`/send` is a **quick handoff, not an investigation.** Two steps: write one lean
+`compact.md`, then `send.sh send … --yes`. Nothing else by default — **no `doctor`,
+no `inspect`, no git, no `evidence/`** unless a real artifact demands it. Template-
+padding, git reconciliation, and a separate preview are the ceremony that made `/send`
+slow; skip them.
 
-- **You can name it** — whether from live work this conversation *or* from memory/recall
-  about ongoing work: that is real context. Don't refuse it. Briefly **confirm scope**
-  with the user (recalled context can be broad or stale), then summarize what you
-  genuinely know into the workdir.
-- **You genuinely cannot** (cold open, nothing recalled): say there's nothing to package
-  yet and ask the user what they want to send.
+**Is there anything to send?** You must be able to name something concrete — a goal, a
+bug, a decision, a plan, a branch's state — from this conversation *or* from recalled
+context about ongoing work. If you genuinely can't (cold open, nothing recalled), stop
+and ask. Never mine git/repo to manufacture a narrative.
 
-Either way, never **manufacture** context by digging into git/repo state to invent a
-narrative you don't actually have — git stays optional corroboration.
-
-Create a temp workdir with this exact layout (the script discovers parts by it):
+**Step 1 — write one file.** Make a temp dir and write `compact.md` into it (the script
+only requires this one file):
 
 ```text
-<workdir>/
-├── compact.md            # REQUIRED — structured working context, loaded by default
-├── evidence/             # small, high-signal — loaded by default
-│   ├── errors.md
-│   └── decisions.md
-└── details/              # large diffs/logs — OPTIONAL, lazy-loaded only
-    ├── full-diff.patch
-    └── test-output.log
+wd=$(mktemp -d)        # then Write "$wd/compact.md"
 ```
 
-Convention applied by the script: `compact.md` + everything in `evidence/` are
-**required & load-by-default**; everything in `details/` is **optional & lazy**.
-
-Write `compact.md` from this template (the first line sets the send title):
+Use this **lean** template. The first line sets the send title and is required; **write
+only the sections you can fill without inventing or generalizing — omit the rest.** A
+section with a placeholder or a vague sentence is worse than no section. Keep it ≤ ~30 KB
+(hard cap 50 KB).
 
 ```md
 # Context: <short title>
 ## Goal
 ## Current state
-## Current hypothesis
-## What was already tried
-## Decisions made
-## Relevant files
-- `path/to/file.ts` — why relevant
-## Current diff summary
-## Important errors
-## Open questions
-## Suggested next steps
-## Exclusions / redactions
-- Raw transcript not included. Secrets/env not included. Full logs are optional details only.
+## Next steps
+## Open questions      # only if real
+## Relevant files      # only if real — `path` — why it matters
 ```
 
-Then:
+Summarize from what you **already know**. Don't open git, read repo files, or reconcile
+against the working tree — that round-trip is the ceremony to avoid.
 
-1. Write `compact.md` by **summarizing the session** (the template sections map to it);
-   keep it ≤ ~30 KB (hard cap 50 KB) and put large material in `details/`.
-2. Put **small** excerpts (key errors, decisions, a few file snippets) in `evidence/`.
-3. Put **large** diffs/logs in `details/` — never inline them into compact.
-4. Git is **optional corroboration only** — inspect it (when useful and permitted)
-   to fill `## Current diff summary` / `## Relevant files`, never to source the
-   context. Never include secrets, `.env`, keys, raw transcripts, or hidden reasoning
-   (see `references/security.md`).
-5. Run `bash "<skill-dir>/scripts/send.sh" send <workdir> --ttl <dur> [--one-time]`.
-6. Show the preview (stderr) and **confirm** unless `--yes` was given.
-7. Return the `url` and the `included` / `optional_parts` summary from the JSON.
+**Step 2 — send it (one call):**
 
-The returned `url` ends with `#agekey=…`. **Treat the full link like a secret** —
-anyone with it can decrypt. Never paste it into untrusted remote tools.
+```text
+bash "<skill-dir>/scripts/send.sh" send "$wd" --ttl 24h --yes
+```
+
+`--yes` creates the link immediately, no confirm. The script still **secret-scans and
+size-checks first** and refuses on a high-confidence secret (override only with
+`--allow-secrets`); the preview still prints to stderr, so you see exactly what went.
+
+**Step 3 — return the link.** Parse the JSON; return `url` plus the `included` /
+`optional_parts` summary. The `url` ends in `#agekey=…` — **treat the whole link like a
+secret**; anyone with it can decrypt. Never paste it into untrusted remote tools.
+
+### Opt-in only — default is one file, no extras
+
+The two-step fast path is the complete default. Stop there unless one of these is
+**literally true** — if you're only evaluating whether it *might* apply, skip it:
+
+- You have an actual log or diff file the recipient must read → `details/<name>.log` /
+  `.patch` (lazy-loaded, never inlined into compact).
+- You have a concrete, bounded error or decision artifact → `evidence/<name>.md`
+  (loaded by default, alongside compact).
+- User asked to preview before upload → `/send --inspect`, or drop `--yes` for the
+  interactive confirm.
+- A dependency is broken → `/send --doctor`.
+
+Git is **never** a source of context — touch it only to copy a specific diff the
+recipient explicitly requested. Never put secrets, `.env`, keys, raw transcripts, or
+hidden reasoning into the workdir (see `references/security.md`).
 
 ## Load mode
 

@@ -38,15 +38,33 @@ disable-model-invocation: true
 ```
 `disable-model-invocation: true` — send/load is a side-effecting, user-invoked workflow.
 
-### 3. Send-mode instructions (SKILL.md body)
-On `/send`, the agent should:
-1. **Summarize what the session genuinely knows** into compact working context (goal, state, hypothesis, tried, decisions, relevant files, errors, open questions, next steps) → `compact.md`, within caps ([[size-limits]]). The source is *this conversation* **plus** any concrete context recalled from memory about ongoing work (a named bug, a plan, a branch's state) — recalled context is real, so **confirm its scope** with the user rather than refusing it. Only when you can name nothing concrete (cold open, nothing recalled) stop and ask the user; never manufacture context from git or repo state.
-2. Add small `evidence/*` (errors, decisions, file excerpts); put large diffs/logs in `details/*` ([[content-policy]]).
-3. Write `manifest.json` (semantic map) per [[send-format]].
-4. Git is **optional corroboration only** — inspect it (when useful and permitted) to fill the diff summary / relevant files, never to source the context.
-5. Run `scripts/send.sh send <workdir> --ttl … [--one-time]`.
-6. Show the preview; require confirmation unless `--yes`.
-7. Return the URL + included/optional summary from the script's JSON.
+### 3. Send-mode instructions (SKILL.md body) — the fast path
+`/send` is a **quick handoff, not an investigation.** The default is a two-step,
+low-ceremony flow — **one Write + one `send --yes`** — so a simple handoff doesn't make
+the user wait. The drag to avoid: template-padding, git reconciliation, a `doctor`
+preflight, and a separate `inspect` preview. None of those run by default.
+
+1. **Anything to send?** The agent must be able to name something concrete — a goal,
+   bug, decision, plan, or branch state — from *this conversation* **or** from recalled
+   context about ongoing work. If it genuinely can't (cold open, nothing recalled), stop
+   and ask. Never mine git/repo to manufacture a narrative.
+2. **Write one lean `compact.md`** into a temp dir (`mktemp -d`). Title (required, sets
+   the send title) plus only the sections that carry real content — goal, current state,
+   next steps; open questions / relevant files **only if real**. Summarize from what the
+   session already knows; don't open git or read repo files. Caps per [[size-limits]].
+3. **Send in one call:** `scripts/send.sh send <wd> --ttl 24h --yes`. `--yes` is the
+   default skill behavior — the link is created immediately. The script still
+   secret-scans ([[content-policy]]) and size-checks first and **refuses** on a
+   high-confidence secret; the preview prints to stderr so the agent sees what went.
+4. Return the URL + included/optional summary from the JSON. The link ends in
+   `#agekey=…` — treat the whole link as a secret ([[security-privacy]]).
+
+**Opt-in extras, only when the material genuinely exists** (not the default):
+`evidence/*` for a few key errors/decisions to load by default; `details/*` for a real
+big diff/log (lazy, never inlined); `/send --inspect` or dropping `--yes` for a look
+before the link goes live; `/send --doctor` when deps look broken. Git stays **optional
+corroboration only** — used to fill a diff summary the recipient explicitly needs, never
+to source the context.
 
 ### 4. Load-mode instructions
 On `/send --load <url>`:
@@ -67,6 +85,7 @@ Optional shim `.opencode/commands/send.md` that tells OpenCode to use the `send`
 ## Verification
 - `/send --doctor` reports age/curl/gzip + server reachability.
 - `/send --inspect` / `--dry-run` builds a workdir and prints a preview, uploads nothing.
+- Default `/send` is two steps (one Write + one `send --yes`) — no doctor/inspect/git preflight.
 - Two-machine round-trip: send → copy URL → `--load` → compact appears, details listed (not injected).
 - Request capture confirms no `#agekey` leaves the machine ([[security-privacy]] R2).
 
@@ -75,4 +94,5 @@ Optional shim `.opencode/commands/send.md` that tells OpenCode to use the `send`
 - **Windows quoting** of the fragment → prefer `#k=<base64url>` encoding; test in `send.ps1` ([[e2ee-link-key-model]]).
 - **Huge details injected** → ensure load is compact-first and details are lazy.
 - **Fragment stripped by a tool** → never pass the full URL to remote tools; load locally.
+- **Slow / heavy `/send`** → the default is the two-step fast path (one lean `compact.md` + `send --yes`). `doctor`, `inspect`, `evidence/`, `details/`, and git are **opt-in**, not preflight ceremony. Don't reconcile a draft against the working tree; summarize from what the session already knows.
 - **False "nothing to package"** → the trigger to stop-and-ask is *can you name concrete context* (live **or** recalled), not *how many messages were exchanged*. Package genuine recalled work with its scope confirmed; only a true cold open stops and asks — never mine git for filler.
