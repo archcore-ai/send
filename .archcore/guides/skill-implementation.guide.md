@@ -40,10 +40,10 @@ disable-model-invocation: true
 
 ### 3. Send-mode instructions (SKILL.md body)
 On `/send`, the agent should:
-1. Build compact working context (goal, state, hypothesis, tried, decisions, relevant files, errors, open questions, next steps) → `compact.md`, within caps ([[size-limits]]).
+1. **Summarize what the session genuinely knows** into compact working context (goal, state, hypothesis, tried, decisions, relevant files, errors, open questions, next steps) → `compact.md`, within caps ([[size-limits]]). The source is *this conversation* **plus** any concrete context recalled from memory about ongoing work (a named bug, a plan, a branch's state) — recalled context is real, so **confirm its scope** with the user rather than refusing it. Only when you can name nothing concrete (cold open, nothing recalled) stop and ask the user; never manufacture context from git or repo state.
 2. Add small `evidence/*` (errors, decisions, file excerpts); put large diffs/logs in `details/*` ([[content-policy]]).
 3. Write `manifest.json` (semantic map) per [[send-format]].
-4. Inspect git state only when useful and permitted.
+4. Git is **optional corroboration only** — inspect it (when useful and permitted) to fill the diff summary / relevant files, never to source the context.
 5. Run `scripts/send.sh send <workdir> --ttl … [--one-time]`.
 6. Show the preview; require confirmation unless `--yes`.
 7. Return the URL + included/optional summary from the script's JSON.
@@ -75,3 +75,4 @@ Optional shim `.opencode/commands/send.md` that tells OpenCode to use the `send`
 - **Windows quoting** of the fragment → prefer `#k=<base64url>` encoding; test in `send.ps1` ([[e2ee-link-key-model]]).
 - **Huge details injected** → ensure load is compact-first and details are lazy.
 - **Fragment stripped by a tool** → never pass the full URL to remote tools; load locally.
+- **False "nothing to package"** → the trigger to stop-and-ask is *can you name concrete context* (live **or** recalled), not *how many messages were exchanged*. Package genuine recalled work with its scope confirmed; only a true cold open stops and asks — never mine git for filler.
