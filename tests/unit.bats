@@ -75,3 +75,14 @@ setup() {
   [ "$status" -eq 7 ]
   echo "$output" | jq -e '.error_code == "FRAGMENT_MISSING"' >/dev/null
 }
+
+# Guards the agent-facing instruction itself: the fast path MUST tell the agent to
+# capture a thin session's visible exchange close to verbatim (the regression that
+# made a greeting-only session load back as the meta-summary "opened with a greeting").
+# Real-agent behavior is out of scope per testing.rule; this lints the prompt text.
+@test "doc-lint: SKILL.md fast-path documents the verbatim ## Conversation section" {
+  [ -f "$SKILL_MD" ]
+  grep -qF '## Conversation' "$SKILL_MD"          # the template offers the section
+  grep -qF 'close to' "$SKILL_MD"                 # "close to verbatim" guidance
+  grep -qF 'content-policy R3/R4' "$SKILL_MD"     # the bound: no hidden/full/raw transcript
+}

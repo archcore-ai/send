@@ -88,6 +88,7 @@ Per-part `sha256` is **not** exposed here (metadata minimization): the client ve
 ### `compact.md` template
 ```md
 # Context: <title>
+## Conversation        # optional — only for thin/dialogue sessions: the visible exchange, close to verbatim
 ## Goal
 ## Current state
 ## Current hypothesis
@@ -100,7 +101,7 @@ Per-part `sha256` is **not** exposed here (metadata minimization): the client ve
 ## Open questions
 ## Suggested next steps
 ## Exclusions / redactions
-- Raw transcript not included. Secrets/env not included. Full logs are optional details only.
+- Full/unrelated raw transcript and hidden reasoning not included. Secrets/env not included. Full logs are optional details only. (A thin session's own short, visible exchange MAY appear close to verbatim under `## Conversation` — that is not a raw transcript; see [[content-policy]] R3/R4.)
 ```
 
 ### Loader behavior

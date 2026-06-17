@@ -73,7 +73,12 @@ slow; skip them.
 **What to send — always send the session, no matter how small.** Package whatever
 *this conversation* actually holds. **A couple of messages is context. A single
 greeting is context. A bare `/send` with one prior line is context.** Thin is fine —
-summarize the real exchange (include it close to verbatim when it's short) and send.
+when the session is mostly a short exchange (a greeting, a question, a couple of
+turns), put the actual **visible** messages into a `## Conversation` section close to
+verbatim: for a thin session that exchange *is* the context, so don't flatten it into a
+meta-description like "opened with a greeting." The bound is unchanged — only the
+**visible** exchange, never hidden reasoning and never the full or unrelated raw
+transcript (content-policy R3/R4). Then send.
 **Never refuse, never stop to ask whether there's "enough," never treat a short or
 sparse session as "empty."** There is always something to hand off, and a one-line
 `compact.md` is a valid handoff. Just write it and send. The one and only hard rule is
@@ -94,6 +99,7 @@ section with a placeholder or a vague sentence is worse than no section. Keep it
 
 ```md
 # Context: <short title>
+## Conversation        # only for thin/dialogue sessions — the visible exchange, close to verbatim
 ## Goal
 ## Current state
 ## Next steps

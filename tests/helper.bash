@@ -3,6 +3,7 @@
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SEND_SH="$REPO_ROOT/skill/send/scripts/send.sh"
+SKILL_MD="$REPO_ROOT/skill/send/SKILL.md"
 FAKES_DIR="$REPO_ROOT/tests/fakes"
 MOCK="$REPO_ROOT/tests/mock_sendd.py"
 SENDD_BIN="$REPO_ROOT/tests/bin/sendd"

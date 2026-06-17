@@ -19,7 +19,8 @@ status: accepted
   unrelated chat transcript · hidden chain-of-thought / private reasoning
   full customer PII · full raw logs (unless explicitly asked) · generated/minified/lock files
   ```
-- **R4 — Compact-first content.** `compact` carries structured working context (goal, state, hypothesis, decisions, files, errors, next steps), not raw transcript. Large diffs/logs are `detail.*` (optional), never inlined into compact ([[size-limits]]).
+  *Carve-out:* the ban targets the **full / unrelated / hidden** transcript — not the session's own short, **visible** exchange when that exchange *is* the working context (a thin or greeting-only session). Such a short exchange MAY be quoted close to verbatim in `compact` (see R4); it is not a "raw transcript". Hidden reasoning and any full or unrelated transcript stay excluded regardless.
+- **R4 — Compact-first content.** `compact` carries structured working context (goal, state, hypothesis, decisions, files, errors, next steps), not raw transcript. Large diffs/logs are `detail.*` (optional), never inlined into compact ([[size-limits]]). **Thin sessions:** when the session is mostly a short visible exchange, `compact` MAY carry that exchange close to verbatim in a `## Conversation` section — that *is* the structured context for such a session; the manifest `raw_transcript_included` flag stays `false`, because a short curated exchange is not the full raw transcript.
 - **R5 — Preview discloses.** The send preview MUST list included / optional / skipped items and state that the server receives ciphertext only ([[skill-contract]] UX-1).
 
 ### Secret patterns (minimum set)

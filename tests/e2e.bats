@@ -40,6 +40,38 @@ do_send() {
   echo "$output" | jq -e '.available_details | map(.part_id) | index("detail.full-diff") != null' >/dev/null
 }
 
+@test "fidelity: a verbatim ## Conversation compact survives send->load byte-identical" {
+  # The whole point of capturing a thin session: the visible exchange must come back
+  # exactly as written, not paraphrased. Proves the transport preserves a verbatim
+  # ## Conversation block (the fix's load-side guarantee).
+  local wd="$BATS_TEST_TMPDIR/wd-conv"
+  rm -rf "$wd"; mkdir -p "$wd"
+  cat > "$wd/compact.md" <<'EOF'
+# Context: Thin greeting session
+## Conversation
+> **User:** hello vanya
+> **Me:** Hey! What can I help you with today? If you're picking up work on the
+> Send project, I can dig into the architecture docs, the Go server, or the skill.
+## Current state
+Fresh session, branch main, clean tree. No task started yet.
+EOF
+
+  run --separate-stderr bash "$SEND_SH" send "$wd" --yes --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  local url; url="$(echo "$output" | jq -r '.url')"
+
+  run --separate-stderr bash "$SEND_SH" load "$url" --server "$SERVER_URL"
+  [ "$status" -eq 0 ]
+  # Equal byte-for-byte. json_escape drops the one trailing newline and $(...) strips
+  # trailing newlines on both sides, so the comparison is exact for the content.
+  local expected got
+  expected="$(cat "$wd/compact.md")"
+  got="$(echo "$output" | jq -r '.compact_context')"
+  [ "$got" = "$expected" ]
+  # And the exact verbatim turn survived — not flattened into a summary.
+  echo "$got" | grep -qF '> **User:** hello vanya'
+}
+
 @test "INV-2: load never fetches a load_by_default:false detail part" {
   do_send
   : > "$MOCK_LOG"  # focus the log on the load phase
@@ -84,6 +116,19 @@ do_send() {
 @test "SECURITY: temp plaintext + ephemeral identity are gone after a send" {
   before="$(find "$TMPDIR" -maxdepth 1 -name 'archcore-send.*' 2>/dev/null | wc -l | tr -d ' ')"
   do_send
+  after="$(find "$TMPDIR" -maxdepth 1 -name 'archcore-send.*' 2>/dev/null | wc -l | tr -d ' ')"
+  [ "$after" -le "$before" ]
+}
+
+@test "SECURITY: temp plaintext + ephemeral identity are gone after a FAILED send" {
+  # security-privacy: temp deleted on success AND failure. An unreachable server makes
+  # the send fail at create — AFTER the ephemeral age identity is generated and parts
+  # are encrypted — so this exercises the cleanup trap on the failure path.
+  before="$(find "$TMPDIR" -maxdepth 1 -name 'archcore-send.*' 2>/dev/null | wc -l | tr -d ' ')"
+  wd="$(make_workdir)"
+  run --separate-stderr bash "$SEND_SH" send "$wd" --yes --server "http://127.0.0.1:9"
+  [ "$status" -eq 6 ]
+  echo "$output" | jq -e '.error_code == "SERVER_UNREACHABLE"' >/dev/null
   after="$(find "$TMPDIR" -maxdepth 1 -name 'archcore-send.*' 2>/dev/null | wc -l | tr -d ' ')"
   [ "$after" -le "$before" ]
 }
