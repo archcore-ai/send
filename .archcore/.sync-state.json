@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "files": {},
+  "relations": [
+    {
+      "source": "specs/send-format.spec.md",
+      "target": "decisions/multipart-send-format.adr.md",
+      "type": "implements"
+    },
+    {
+      "source": "specs/backend-http-api.spec.md",
+      "target": "decisions/zero-knowledge-backend.adr.md",
+      "type": "implements"
+    },
+    {
+      "source": "specs/backend-http-api.spec.md",
+      "target": "decisions/practical-one-time-redemption.adr.md",
+      "type": "implements"
+    },
+    {
+      "source": "guides/skill-implementation.guide.md",
+      "target": "specs/cli-contract.spec.md",
+      "type": "implements"
+    },
+    {
+      "source": "guides/skill-implementation.guide.md",
+      "target": "specs/send-format.spec.md",
+      "type": "implements"
+    },
+    {
+      "source": "guides/server-implementation.guide.md",
+      "target": "specs/backend-http-api.spec.md",
+      "type": "implements"
+    },
+    {
+      "source": "guides/server-implementation.guide.md",
+      "target": "decisions/storage-abstraction.adr.md",
+      "type": "implements"
+    },
+    {
+      "source": "guides/self-host-deploy.guide.md",
+      "target": "decisions/hosting-posture-rf-availability.adr.md",
+      "type": "implements"
+    },
+    {
+      "source": "guides/self-host-deploy.guide.md",
+      "target": "guides/server-implementation.guide.md",
+      "type": "depends_on"
+    },
+    {
+      "source": "specs/cli-contract.spec.md",
+      "target": "decisions/age-dependency-no-bundled-binary.adr.md",
+      "type": "depends_on"
+    },
+    {
+      "source": "specs/backend-http-api.spec.md",
+      "target": "decisions/storage-abstraction.adr.md",
+      "type": "depends_on"
+    },
+    {
+      "source": "roadmap.idea.md",
+      "target": "archcore-send.prd.md",
+      "type": "extends"
+    },
+    {
+      "source": "roadmap.idea.md",
+      "target": "decisions/e2ee-link-key-model.adr.md",
+      "type": "extends"
+    },
+    {
+      "source": "roadmap.idea.md",
+      "target": "decisions/storage-abstraction.adr.md",
+      "type": "extends"
+    },
+    {
+      "source": "architecture-overview.doc.md",
+      "target": "archcore-send.prd.md",
+      "type": "related"
+    },
+    {
+      "source": "specs/send-format.spec.md",
+      "target": "decisions/e2ee-link-key-model.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "specs/error-catalog.spec.md",
+      "target": "specs/backend-http-api.spec.md",
+      "type": "related"
+    },
+    {
+      "source": "specs/error-catalog.spec.md",
+      "target": "specs/cli-contract.spec.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/security-privacy.rule.md",
+      "target": "decisions/zero-knowledge-backend.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/security-privacy.rule.md",
+      "target": "decisions/e2ee-link-key-model.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/content-policy.rule.md",
+      "target": "decisions/zero-knowledge-backend.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "rules/size-limits.rule.md",
+      "target": "decisions/multipart-send-format.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "guides/threat-model.doc.md",
+      "target": "rules/security-privacy.rule.md",
+      "type": "related"
+    },
+    {
+      "source": "guides/threat-model.doc.md",
+      "target": "decisions/zero-knowledge-backend.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "decisions/e2ee-link-key-model.adr.md",
+      "target": "decisions/age-dependency-no-bundled-binary.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "decisions/storage-abstraction.adr.md",
+      "target": "decisions/go-single-binary-server.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "experience/add-storage-backend.task-type.md",
+      "target": "decisions/storage-abstraction.adr.md",
+      "type": "related"
+    },
+    {
+      "source": "experience/add-storage-backend.task-type.md",
+      "target": "guides/server-implementation.guide.md",
+      "type": "related"
+    },
+    {
+      "source": "experience/add-send-part-kind.task-type.md",
+      "target": "specs/send-format.spec.md",
+      "type": "related"
+    },
+    {
+      "source": "experience/add-send-part-kind.task-type.md",
+      "target": "guides/skill-implementation.guide.md",
+      "type": "related"
+    },
+    {
+      "source": "specs/send-format.spec.md",
+      "target": "rules/content-policy.rule.md",
+      "type": "related"
+    },
+    {
+      "source": "specs/cli-contract.spec.md",
+      "target": "rules/security-privacy.rule.md",
+      "type": "related"
+    }
+  ]
+}
