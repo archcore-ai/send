@@ -143,9 +143,9 @@ func (s *Server) requireTeamToken(next http.HandlerFunc) http.HandlerFunc {
 func (s *Server) allow(r *http.Request, bucket string) bool {
 	var lim RateLimiter
 	switch bucket {
-	case "create":
+	case "create", "finalize", "redeem":
 		lim = s.createLimiter
-	case "upload":
+	case "upload", "download", "meta":
 		lim = s.uploadLimiter
 	}
 	if lim == nil {
@@ -194,9 +194,12 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func bearerOrQuery(r *http.Request) string {
+// bearerToken extracts the redeem grant from the Authorization header only. The
+// token is never accepted as a query parameter, so it cannot leak via proxy
+// access logs, browser history, or Referer headers.
+func bearerToken(r *http.Request) string {
 	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
 		return strings.TrimPrefix(h, "Bearer ")
 	}
-	return r.URL.Query().Get("redeem_token")
+	return ""
 }

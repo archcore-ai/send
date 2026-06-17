@@ -23,7 +23,7 @@ func OpenFilesystemBlob(dir string) (*FilesystemBlob, error) {
 	if dir == "" {
 		return nil, fmt.Errorf("blob dir must not be empty")
 	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return nil, fmt.Errorf("create blob dir: %w", err)
 	}
 	abs, err := filepath.Abs(dir)
@@ -51,7 +51,7 @@ func (b *FilesystemBlob) Put(ctx context.Context, key string, r io.Reader, want 
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(p), 0o750); err != nil {
 		return fmt.Errorf("mkdir blob parent: %w", err)
 	}
 	tmp, err := os.CreateTemp(filepath.Dir(p), ".tmp-*")
@@ -81,7 +81,7 @@ func (b *FilesystemBlob) Put(ctx context.Context, key string, r io.Reader, want 
 	if n != want.EncryptedSize || hex.EncodeToString(h.Sum(nil)) != want.SHA256 {
 		return ErrIntegrity
 	}
-	if err := tmp.Chmod(0o644); err != nil {
+	if err := tmp.Chmod(0o600); err != nil {
 		return fmt.Errorf("chmod temp: %w", err)
 	}
 	if err := tmp.Close(); err != nil {

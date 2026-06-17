@@ -13,6 +13,21 @@ import (
 // maxCreateBody bounds the create request JSON (metadata only, never ciphertext).
 const maxCreateBody = 1 << 20 // 1 MiB
 
+// validSHA256Hex reports whether s is exactly 64 lowercase hex chars — the shape
+// of a SHA-256 digest. Clients compute it with sha256sum/shasum (lowercase hex).
+func validSHA256Hex(s string) bool {
+	if len(s) != 64 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
@@ -123,7 +138,12 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	id := r.PathValue("id")
 	partID := r.PathValue("part_id")
-	declared := store.PartMeta{PartID: partID, SHA256: r.Header.Get("X-Send-Ciphertext-Sha256")}
+	sha := r.Header.Get("X-Send-Ciphertext-Sha256")
+	if !validSHA256Hex(sha) {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "missing or malformed X-Send-Ciphertext-Sha256 header")
+		return
+	}
+	declared := store.PartMeta{PartID: partID, SHA256: sha}
 
 	err := s.store.PutPart(r.Context(), id, partID, r.Body, declared)
 	if err != nil {
@@ -134,6 +154,10 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleFinalize(w http.ResponseWriter, r *http.Request) {
+	if !s.allow(r, "finalize") {
+		writeError(w, http.StatusTooManyRequests, "RATE_LIMITED", "rate limit exceeded")
+		return
+	}
 	id := r.PathValue("id")
 	if err := s.store.FinalizeSend(r.Context(), id); err != nil {
 		writeStoreError(w, err)
@@ -152,6 +176,10 @@ func (s *Server) handleFinalize(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
+	if !s.allow(r, "meta") {
+		writeError(w, http.StatusTooManyRequests, "RATE_LIMITED", "rate limit exceeded")
+		return
+	}
 	id := r.PathValue("id")
 	meta, err := s.store.GetSendMeta(r.Context(), id)
 	if err != nil {
@@ -161,7 +189,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 	parts := make([]map[string]any, 0, len(meta.Parts))
 	for _, p := range meta.Parts {
 		parts = append(parts, map[string]any{
-			"part_id": p.PartID, "encrypted_size": p.EncryptedSize, "sha256": p.SHA256,
+			"part_id": p.PartID, "encrypted_size": p.EncryptedSize,
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -176,6 +204,10 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRedeem(w http.ResponseWriter, r *http.Request) {
+	if !s.allow(r, "redeem") {
+		writeError(w, http.StatusTooManyRequests, "RATE_LIMITED", "rate limit exceeded")
+		return
+	}
 	id := r.PathValue("id")
 	grant, err := s.store.RedeemSend(r.Context(), id)
 	if err != nil {
@@ -194,9 +226,13 @@ func (s *Server) handleRedeem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
+	if !s.allow(r, "download") {
+		writeError(w, http.StatusTooManyRequests, "RATE_LIMITED", "rate limit exceeded")
+		return
+	}
 	id := r.PathValue("id")
 	partID := r.PathValue("part_id")
-	token := bearerOrQuery(r)
+	token := bearerToken(r)
 
 	rc, err := s.store.GetPart(r.Context(), id, partID, token)
 	if err != nil {
