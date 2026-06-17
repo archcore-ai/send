@@ -44,10 +44,12 @@ low-ceremony flow — **one Write + one `send --yes`** — so a simple handoff d
 the user wait. The drag to avoid: template-padding, git reconciliation, a `doctor`
 preflight, and a separate `inspect` preview. None of those run by default.
 
-1. **Anything to send?** The agent must be able to name something concrete — a goal,
-   bug, decision, plan, or branch state — from *this conversation* **or** from recalled
-   context about ongoing work. If it genuinely can't (cold open, nothing recalled), stop
-   and ask. Never mine git/repo to manufacture a narrative.
+1. **What to send — always the session.** Package whatever *this conversation* actually
+   holds, **however few messages** — even a single exchange is valid context. Summarize
+   what was said (include it close to verbatim when it's short) and send. Don't refuse
+   for being "too small" or stop to ask whether there's "enough"; there always is unless
+   the session is literally empty. The one hard rule: never mine git/repo to manufacture
+   a narrative. Stop and ask *only* when there is no user content at all.
 2. **Write one lean `compact.md`** into a temp dir (`mktemp -d`). Title (required, sets
    the send title) plus only the sections that carry real content — goal, current state,
    next steps; open questions / relevant files **only if real**. Summarize from what the
@@ -95,4 +97,4 @@ Optional shim `.opencode/commands/send.md` that tells OpenCode to use the `send`
 - **Huge details injected** → ensure load is compact-first and details are lazy.
 - **Fragment stripped by a tool** → never pass the full URL to remote tools; load locally.
 - **Slow / heavy `/send`** → the default is the two-step fast path (one lean `compact.md` + `send --yes`). `doctor`, `inspect`, `evidence/`, `details/`, and git are **opt-in**, not preflight ceremony. Don't reconcile a draft against the working tree; summarize from what the session already knows.
-- **False "nothing to package"** → the trigger to stop-and-ask is *can you name concrete context* (live **or** recalled), not *how many messages were exchanged*. Package genuine recalled work with its scope confirmed; only a true cold open stops and asks — never mine git for filler.
+- **False "nothing to package"** → never gate on *how many messages were exchanged*. A short session (even 1–2 messages) is still sendable: summarize what was said and send. The *only* reason to stop and ask is a literally empty session with no user content at all — and the only hard rule is never mining git for filler.

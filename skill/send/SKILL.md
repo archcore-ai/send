@@ -70,10 +70,13 @@ no `inspect`, no git, no `evidence/`** unless a real artifact demands it. Templa
 padding, git reconciliation, and a separate preview are the ceremony that made `/send`
 slow; skip them.
 
-**Is there anything to send?** You must be able to name something concrete — a goal, a
-bug, a decision, a plan, a branch's state — from this conversation *or* from recalled
-context about ongoing work. If you genuinely can't (cold open, nothing recalled), stop
-and ask. Never mine git/repo to manufacture a narrative.
+**What to send — always send the session.** Package whatever *this conversation*
+actually holds, **however few messages** — even a single exchange is valid context.
+Summarize what was said (and, when it's short, you may include it close to verbatim),
+then send. Don't refuse for being "too small" and don't stop to ask whether there's
+"enough" — there always is, as long as the session isn't literally empty. The one hard
+rule is **never mine git/repo to manufacture a narrative**: send the real conversation,
+not an invented one. Stop and ask *only* if there is genuinely no user content at all.
 
 **Step 1 — write one file.** Make a temp dir and write `compact.md` into it (the script
 only requires this one file):
