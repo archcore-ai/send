@@ -4,6 +4,7 @@ status: accepted
 ---
 
 
+
 ## Purpose
 
 Single source of truth for error codes across the client scripts and the server — status, message intent, and remediation — so the two never diverge. Keywords per RFC 2119.
@@ -40,6 +41,7 @@ Shape: `{ "error_code":"…", "message":"…" }` + HTTP status.
 | 403 | `INVALID_REDEEM` | missing / expired / invalid grant token |
 | 404 | `SEND_NOT_FOUND` | unknown or deleted id |
 | 409 | `SEND_FINALIZED` | mutate after finalize / upload to a non-`creating` send |
+| 409 | `SEND_NOT_FINALIZED` | redeem attempted before the send is finalized |
 | 410 | `SEND_EXPIRED` | TTL has passed |
 | 410 | `SEND_ALREADY_REDEEMED` | one-time link already consumed |
 | 413 | `PAYLOAD_TOO_LARGE` | part or body over cap |

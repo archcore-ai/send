@@ -33,29 +33,33 @@ func (c *Coordinator) CreateSend(ctx context.Context, in CreateSendInput) (SendR
 // publishes the blob BEFORE recording the part as uploaded. A crash between the two
 // leaves a blob whose part row has uploaded_at IS NULL → finalize stays INCOMPLETE
 // and GC reaps both. The inverse order could expose a part row with missing bytes.
-func (c *Coordinator) PutPart(ctx context.Context, sendID, partID string, r io.Reader, declared PartMeta) error {
+func (c *Coordinator) PutPart(ctx context.Context, sendID, partID string, r io.Reader, declared PartMeta) (int64, error) {
 	status, err := c.state.SendStatusOf(ctx, sendID)
 	if err != nil {
-		return err // ErrNotFound
+		return 0, err // ErrNotFound
 	}
 	if status != SendStatusCreating {
-		return ErrConflict // upload to a finalized/expired send
+		return 0, ErrConflict // upload to a finalized/expired send
 	}
 	stored, _, err := c.state.DeclaredPart(ctx, sendID, partID)
 	if err != nil {
-		return err // ErrUnknownPart
+		return 0, err // ErrUnknownPart
 	}
 	// The PUT header's sha (declared) must agree with what was declared at create.
 	if declared.SHA256 != "" && declared.SHA256 != stored.SHA256 {
-		return ErrIntegrity
+		return 0, ErrIntegrity
 	}
 	// blob.Put streams + verifies actual bytes against the create-time size+sha,
 	// publishing only on a match (ErrIntegrity / ErrPartTooLarge otherwise).
 	want := PartMeta{PartID: partID, EncryptedSize: stored.EncryptedSize, SHA256: stored.SHA256}
-	if err := c.blob.Put(ctx, StorageKey(sendID, partID), r, want, c.maxPartBytes); err != nil {
-		return err
+	n, err := c.blob.Put(ctx, StorageKey(sendID, partID), r, want, c.maxPartBytes)
+	if err != nil {
+		return 0, err
 	}
-	return c.state.MarkUploaded(ctx, sendID, partID)
+	if err := c.state.MarkUploaded(ctx, sendID, partID); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 func (c *Coordinator) FinalizeSend(ctx context.Context, sendID string) error {

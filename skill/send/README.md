@@ -43,7 +43,8 @@ Useful flags: `--ttl 24h` (max `7d`) · `--one-time` (default) · `--yes` ·
   `winget install FiloSottile.age` · or your distro package
 - `curl` + `gzip` (preinstalled on macOS/Linux; PowerShell on Windows uses
   `Invoke-WebRequest` / built-in compression)
-- A reachable Send server — set `SEND_SERVER_URL` (or pass `--server`)
+- A reachable Send server — defaults to `https://send.archcore.ai`; override with
+  `SEND_SERVER_URL` (or pass `--server`) for a self-hosted instance
 
 Run `/send --doctor` and it'll tell you exactly what's missing.
 

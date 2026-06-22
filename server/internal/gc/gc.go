@@ -1,6 +1,6 @@
 // Package gc runs the background sweeper that deletes expired sends, consumed
-// one-time sends past their grant window, unfinished uploads older than 1h, and
-// orphan blobs. It drives the store's Reaper on a fixed interval.
+// one-time sends past their grant window, stale unfinished uploads, and orphan
+// blobs. It drives the store's Reaper on a fixed interval.
 package gc
 
 import (

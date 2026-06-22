@@ -1,6 +1,6 @@
 ---
 title: "Add a new SendStore storage backend"
-status: draft
+status: accepted
 ---
 
 ## What

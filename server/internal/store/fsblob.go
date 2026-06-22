@@ -46,17 +46,17 @@ func (b *FilesystemBlob) resolve(key string) (string, error) {
 	return p, nil
 }
 
-func (b *FilesystemBlob) Put(ctx context.Context, key string, r io.Reader, want PartMeta, limit int64) (err error) {
+func (b *FilesystemBlob) Put(ctx context.Context, key string, r io.Reader, want PartMeta, limit int64) (written int64, err error) {
 	p, err := b.resolve(key)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if err := os.MkdirAll(filepath.Dir(p), 0o750); err != nil {
-		return fmt.Errorf("mkdir blob parent: %w", err)
+		return 0, fmt.Errorf("mkdir blob parent: %w", err)
 	}
 	tmp, err := os.CreateTemp(filepath.Dir(p), ".tmp-*")
 	if err != nil {
-		return fmt.Errorf("create temp: %w", err)
+		return 0, fmt.Errorf("create temp: %w", err)
 	}
 	tmpName := tmp.Name()
 	published := false
@@ -71,27 +71,27 @@ func (b *FilesystemBlob) Put(ctx context.Context, key string, r io.Reader, want 
 	// limit+1 so a stream exactly at limit passes but one byte over trips.
 	n, err := io.Copy(io.MultiWriter(tmp, h), io.LimitReader(r, limit+1))
 	if err != nil {
-		return fmt.Errorf("write blob: %w", err)
+		return 0, fmt.Errorf("write blob: %w", err)
 	}
 	if n > limit {
-		return ErrPartTooLarge
+		return 0, ErrPartTooLarge
 	}
 
 	// Verify BEFORE publishing: a mismatched blob never becomes visible.
 	if n != want.EncryptedSize || hex.EncodeToString(h.Sum(nil)) != want.SHA256 {
-		return ErrIntegrity
+		return 0, ErrIntegrity
 	}
 	if err := tmp.Chmod(0o600); err != nil {
-		return fmt.Errorf("chmod temp: %w", err)
+		return 0, fmt.Errorf("chmod temp: %w", err)
 	}
 	if err := tmp.Close(); err != nil {
-		return fmt.Errorf("close temp: %w", err)
+		return 0, fmt.Errorf("close temp: %w", err)
 	}
 	if err := os.Rename(tmpName, p); err != nil {
-		return fmt.Errorf("publish blob: %w", err)
+		return 0, fmt.Errorf("publish blob: %w", err)
 	}
 	published = true
-	return nil
+	return n, nil
 }
 
 func (b *FilesystemBlob) Open(ctx context.Context, key string) (io.ReadCloser, error) {

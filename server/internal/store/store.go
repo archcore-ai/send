@@ -86,7 +86,7 @@ type SendMeta struct {
 // SendStore is the contract the API layer depends on.
 type SendStore interface {
 	CreateSend(ctx context.Context, in CreateSendInput) (SendRecord, error)
-	PutPart(ctx context.Context, sendID, partID string, r io.Reader, declared PartMeta) error
+	PutPart(ctx context.Context, sendID, partID string, r io.Reader, declared PartMeta) (int64, error)
 	FinalizeSend(ctx context.Context, sendID string) error
 	RedeemSend(ctx context.Context, sendID string) (RedeemGrant, error)
 	GetPart(ctx context.Context, sendID, partID, redeemToken string) (io.ReadCloser, error)
@@ -123,7 +123,7 @@ type StateStore interface {
 // atomically publishing the blob, and discards the temp file returning
 // ErrIntegrity on mismatch. So a blob becomes visible only if it is correct.
 type BlobStore interface {
-	Put(ctx context.Context, key string, r io.Reader, want PartMeta, limit int64) error
+	Put(ctx context.Context, key string, r io.Reader, want PartMeta, limit int64) (int64, error)
 	Open(ctx context.Context, key string) (io.ReadCloser, error)
 	Delete(ctx context.Context, key string) error
 	List(ctx context.Context) ([]string, error)

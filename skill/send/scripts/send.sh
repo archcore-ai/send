@@ -27,6 +27,10 @@ readonly SEND_VERSION="send.v1"
 readonly DEFAULT_TTL="24h"
 readonly MAX_TTL_SECONDS=$((7 * 24 * 3600))
 
+# Default Send server. Used when SEND_SERVER_URL is unset/empty and no --server
+# is given. Override with SEND_SERVER_URL or --server to point at a self-hosted instance.
+readonly DEFAULT_SERVER="https://send.archcore.ai"
+
 # Size caps (bytes) — canonical values from size-limits.rule. Do not redefine elsewhere.
 readonly COMPACT_SOFT=$((30 * 1024))
 readonly COMPACT_HARD=$((50 * 1024))
@@ -678,7 +682,7 @@ EOF
 }
 
 main() {
-  SERVER="${SEND_SERVER_URL:-}"
+  SERVER="${SEND_SERVER_URL:-$DEFAULT_SERVER}"
   SERVER_OVERRIDE=""
   TTL="$DEFAULT_TTL"
   ONE_TIME="true"

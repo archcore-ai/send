@@ -184,6 +184,194 @@ func TestCreateValidation(t *testing.T) {
 	}
 }
 
+func TestCreateTotalOverCapRejected(t *testing.T) {
+	st, err := store.OpenSQLiteState(filepath.Join(t.TempDir(), "t.db"), 10*time.Minute, nil)
+	if err != nil {
+		t.Fatalf("state: %v", err)
+	}
+	blob, err := store.OpenFilesystemBlob(t.TempDir())
+	if err != nil {
+		t.Fatalf("blob: %v", err)
+	}
+	coord := store.NewCoordinator(st, blob, 26214400)
+	cfg := testConfig()
+	// Each part fits the per-part cap, but two together exceed the total cap.
+	cfg.MaxPartBytes = 1000
+	cfg.MaxTotalBytes = 1500
+	srv := httptest.NewServer(New(coord, cfg, logx.New(&bytes.Buffer{}), nil, nil))
+	t.Cleanup(func() {
+		srv.Close()
+		_ = coord.Close()
+	})
+
+	body, _ := json.Marshal(map[string]any{
+		"version": "send.v1", "ttl_seconds": 3600,
+		"parts": []any{
+			map[string]any{"part_id": "a", "encrypted_size": 1000, "sha256": shaHex([]byte("a"))},
+			map[string]any{"part_id": "b", "encrypted_size": 1000, "sha256": shaHex([]byte("b"))},
+		},
+	})
+	resp, err := http.Post(srv.URL+"/v1/sends", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusRequestEntityTooLarge {
+		t.Fatalf("total over cap = %d, want 413", resp.StatusCode)
+	}
+}
+
+func TestUploadMissingShaHeaderRejected(t *testing.T) {
+	srv, _ := newTestServer(t)
+	body := []byte("declared-bytes")
+	createBody, _ := json.Marshal(map[string]any{
+		"version": "send.v1", "ttl_seconds": 3600,
+		"parts": []any{map[string]any{"part_id": "part_0001", "encrypted_size": len(body), "sha256": shaHex(body)}},
+	})
+	resp, _ := http.Post(srv.URL+"/v1/sends", "application/json", bytes.NewReader(createBody))
+	var created struct {
+		ID string `json:"id"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&created)
+	resp.Body.Close()
+
+	for _, tc := range []struct {
+		name, sha string
+	}{
+		{"missing", ""},
+		{"too short", "abc"},
+		{"non-hex", strings.Repeat("z", 64)},
+		{"uppercase", strings.Repeat("A", 64)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req, _ := http.NewRequest(http.MethodPut, srv.URL+"/v1/sends/"+created.ID+"/parts/part_0001", bytes.NewReader(body))
+			if tc.sha != "" {
+				req.Header.Set("X-Send-Ciphertext-Sha256", tc.sha)
+			}
+			up, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("upload: %v", err)
+			}
+			up.Body.Close()
+			if up.StatusCode != http.StatusBadRequest {
+				t.Errorf("malformed sha (%s) status = %d, want 400", tc.name, up.StatusCode)
+			}
+		})
+	}
+}
+
+func TestUploadIdempotentRePut(t *testing.T) {
+	srv, _ := newTestServer(t)
+	body := []byte("opaque-ciphertext")
+	createBody, _ := json.Marshal(map[string]any{
+		"version": "send.v1", "ttl_seconds": 3600,
+		"parts": []any{map[string]any{"part_id": "part_0001", "encrypted_size": len(body), "sha256": shaHex(body)}},
+	})
+	resp, _ := http.Post(srv.URL+"/v1/sends", "application/json", bytes.NewReader(createBody))
+	var created struct {
+		ID string `json:"id"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&created)
+	resp.Body.Close()
+
+	// An identical re-PUT (same sha256) MUST succeed (backend-http-api: upload idempotent).
+	for i := range 2 {
+		req, _ := http.NewRequest(http.MethodPut, srv.URL+"/v1/sends/"+created.ID+"/parts/part_0001", bytes.NewReader(body))
+		req.Header.Set("X-Send-Ciphertext-Sha256", shaHex(body))
+		up, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("upload #%d: %v", i, err)
+		}
+		up.Body.Close()
+		if up.StatusCode != http.StatusOK {
+			t.Fatalf("upload #%d status = %d, want 200", i, up.StatusCode)
+		}
+	}
+}
+
+func TestFinalizeIncompleteRejected(t *testing.T) {
+	srv, _ := newTestServer(t)
+	// Declare two parts, upload only one, then finalize → 400 INCOMPLETE.
+	one := []byte("one")
+	two := []byte("two")
+	createBody, _ := json.Marshal(map[string]any{
+		"version": "send.v1", "ttl_seconds": 3600,
+		"parts": []any{
+			map[string]any{"part_id": "part_0001", "encrypted_size": len(one), "sha256": shaHex(one)},
+			map[string]any{"part_id": "part_0002", "encrypted_size": len(two), "sha256": shaHex(two)},
+		},
+	})
+	resp, _ := http.Post(srv.URL+"/v1/sends", "application/json", bytes.NewReader(createBody))
+	var created struct {
+		ID string `json:"id"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&created)
+	resp.Body.Close()
+
+	req, _ := http.NewRequest(http.MethodPut, srv.URL+"/v1/sends/"+created.ID+"/parts/part_0001", bytes.NewReader(one))
+	req.Header.Set("X-Send-Ciphertext-Sha256", shaHex(one))
+	up, _ := http.DefaultClient.Do(req)
+	up.Body.Close()
+
+	fin, err := http.Post(srv.URL+"/v1/sends/"+created.ID+"/finalize", "application/json", nil)
+	if err != nil {
+		t.Fatalf("finalize: %v", err)
+	}
+	fin.Body.Close()
+	if fin.StatusCode != http.StatusBadRequest {
+		t.Fatalf("incomplete finalize = %d, want 400", fin.StatusCode)
+	}
+}
+
+func TestUploadToFinalizedConflict(t *testing.T) {
+	srv, _ := newTestServer(t)
+	body := []byte("c")
+	id := doSend(t, srv.URL, map[string][]byte{"manifest": []byte("m"), "part_0001": body})
+	// Re-upload to an already-finalized send → 409 SEND_FINALIZED.
+	req, _ := http.NewRequest(http.MethodPut, srv.URL+"/v1/sends/"+id+"/parts/part_0001", bytes.NewReader(body))
+	req.Header.Set("X-Send-Ciphertext-Sha256", shaHex(body))
+	up, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("upload: %v", err)
+	}
+	up.Body.Close()
+	if up.StatusCode != http.StatusConflict {
+		t.Fatalf("upload to finalized = %d, want 409", up.StatusCode)
+	}
+}
+
+func TestRedeemNotFinalizedConflict(t *testing.T) {
+	srv, _ := newTestServer(t)
+	// Create (but do not finalize), then redeem → 409 SEND_NOT_FINALIZED.
+	body := []byte("c")
+	createBody, _ := json.Marshal(map[string]any{
+		"version": "send.v1", "ttl_seconds": 3600,
+		"parts": []any{map[string]any{"part_id": "part_0001", "encrypted_size": len(body), "sha256": shaHex(body)}},
+	})
+	resp, _ := http.Post(srv.URL+"/v1/sends", "application/json", bytes.NewReader(createBody))
+	var created struct {
+		ID string `json:"id"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&created)
+	resp.Body.Close()
+
+	rd, err := http.Post(srv.URL+"/v1/sends/"+created.ID+"/redeem", "application/json", nil)
+	if err != nil {
+		t.Fatalf("redeem: %v", err)
+	}
+	rd.Body.Close()
+	if rd.StatusCode != http.StatusConflict {
+		t.Fatalf("redeem unfinalized = %d, want 409", rd.StatusCode)
+	}
+}
+
+func TestRedeemUnknownNotFound(t *testing.T) {
+	srv, _ := newTestServer(t)
+	if _, status := redeem(t, srv.URL, "snd_does_not_exist"); status != http.StatusNotFound {
+		t.Fatalf("redeem unknown = %d, want 404", status)
+	}
+}
+
 func TestUploadIntegrityFails(t *testing.T) {
 	srv, _ := newTestServer(t)
 	body := []byte("declared-bytes")

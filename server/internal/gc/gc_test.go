@@ -39,7 +39,7 @@ func TestSweepReapsExpiredAndOrphans(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	if err := coord.PutPart(ctx, rec.ID, "part_0001", bytes.NewReader(body), store.PartMeta{}); err != nil {
+	if _, err := coord.PutPart(ctx, rec.ID, "part_0001", bytes.NewReader(body), store.PartMeta{}); err != nil {
 		t.Fatalf("put: %v", err)
 	}
 	if err := coord.FinalizeSend(ctx, rec.ID); err != nil {

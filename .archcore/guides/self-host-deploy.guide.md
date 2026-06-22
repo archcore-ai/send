@@ -1,6 +1,6 @@
 ---
 title: "Self-Hosting, Deploying & Operating the Send Server"
-status: draft
+status: accepted
 ---
 
 ## Prerequisites

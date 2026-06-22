@@ -236,10 +236,11 @@ func (s *SQLiteState) RedeemSend(ctx context.Context, sendID string) (RedeemGran
 		oneTime   int
 		status    string
 		expiresAt int64
+		partCount int
 	)
 	err := s.db.QueryRowContext(ctx,
-		`SELECT one_time, status, expires_at FROM sends WHERE id = ?`, sendID,
-	).Scan(&oneTime, &status, &expiresAt)
+		`SELECT one_time, status, expires_at, part_count FROM sends WHERE id = ?`, sendID,
+	).Scan(&oneTime, &status, &expiresAt, &partCount)
 	if errors.Is(err, sql.ErrNoRows) {
 		return RedeemGrant{}, ErrNotFound
 	}
@@ -279,7 +280,7 @@ func (s *SQLiteState) RedeemSend(ctx context.Context, sendID string) (RedeemGran
 		return RedeemGrant{}, fmt.Errorf("insert grant: %w", err)
 	}
 
-	parts, err := s.partsBrief(ctx, sendID)
+	parts, err := s.partsBrief(ctx, sendID, partCount)
 	if err != nil {
 		return RedeemGrant{}, err
 	}
@@ -322,7 +323,7 @@ func (s *SQLiteState) GetSendMeta(ctx context.Context, sendID string) (SendMeta,
 	if err != nil {
 		return SendMeta{}, fmt.Errorf("meta: %w", err)
 	}
-	parts, err := s.partsFull(ctx, sendID)
+	parts, err := s.partsFull(ctx, sendID, partCount)
 	if err != nil {
 		return SendMeta{}, err
 	}
@@ -338,8 +339,8 @@ func (s *SQLiteState) GetSendMeta(ctx context.Context, sendID string) (SendMeta,
 }
 
 // DeleteExpired removes expired sends, consumed one-time sends past their grant
-// window, and unfinished sends older than 1h, returning the count of deleted sends
-// and the storage keys to purge from the blob store.
+// window, and unfinished sends older than creatingMaxAge, returning the count of
+// deleted sends and the storage keys to purge from the blob store.
 func (s *SQLiteState) DeleteExpired(ctx context.Context, now time.Time) (int, []string, error) {
 	consumedThresh := now.Add(-s.grantTTL).Unix()
 	creatingThresh := now.Add(-creatingMaxAge).Unix()
@@ -401,14 +402,14 @@ func (s *SQLiteState) LiveStorageKeys(ctx context.Context) ([]string, error) {
 	return keys, rows.Err()
 }
 
-func (s *SQLiteState) partsBrief(ctx context.Context, sendID string) ([]PartMeta, error) {
+func (s *SQLiteState) partsBrief(ctx context.Context, sendID string, hint int) ([]PartMeta, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT part_id, encrypted_size FROM send_parts WHERE send_id = ? ORDER BY part_id`, sendID)
 	if err != nil {
 		return nil, fmt.Errorf("parts brief: %w", err)
 	}
 	defer rows.Close()
-	var parts []PartMeta
+	parts := make([]PartMeta, 0, hint)
 	for rows.Next() {
 		var p PartMeta
 		if err := rows.Scan(&p.PartID, &p.EncryptedSize); err != nil {
@@ -419,14 +420,14 @@ func (s *SQLiteState) partsBrief(ctx context.Context, sendID string) ([]PartMeta
 	return parts, rows.Err()
 }
 
-func (s *SQLiteState) partsFull(ctx context.Context, sendID string) ([]PartMeta, error) {
+func (s *SQLiteState) partsFull(ctx context.Context, sendID string, hint int) ([]PartMeta, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT part_id, encrypted_size, sha256 FROM send_parts WHERE send_id = ? ORDER BY part_id`, sendID)
 	if err != nil {
 		return nil, fmt.Errorf("parts full: %w", err)
 	}
 	defer rows.Close()
-	var parts []PartMeta
+	parts := make([]PartMeta, 0, hint)
 	for rows.Next() {
 		var p PartMeta
 		if err := rows.Scan(&p.PartID, &p.EncryptedSize, &p.SHA256); err != nil {

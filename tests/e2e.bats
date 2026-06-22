@@ -102,6 +102,33 @@ EOF
   echo "$output" | jq -e '.content | test("authcache.go")' >/dev/null
 }
 
+@test "load: without --server redeems from the link's own host (self-hosted)" {
+  # Regression guard (Codex P2): a self-hosted link loaded with no --server must use
+  # the host embedded in the URL, not the built-in public default. The send URL carries
+  # the mock's own host, so a correct client redeems against the mock (logged here); a
+  # broken client would target the default server and never reach the mock.
+  do_send
+  : > "$MOCK_LOG"  # focus the log on the load phase
+  run --separate-stderr bash "$SEND_SH" load "$URL"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.ok == true' >/dev/null
+  run grep -F "POST /v1/sends/" "$MOCK_LOG"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/redeem"* ]]
+}
+
+@test "load-detail: without --server fetches the detail from the link's own host" {
+  do_send
+  run --separate-stderr bash "$SEND_SH" load "$URL"   # establishes the cached grant
+  [ "$status" -eq 0 ]
+  : > "$MOCK_LOG"  # focus the log on the load-detail phase
+  run --separate-stderr bash "$SEND_SH" load-detail "$URL" detail.full-diff
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.part_id == "detail.full-diff"' >/dev/null
+  run grep -F "GET /v1/sends/" "$MOCK_LOG"
+  [ "$status" -eq 0 ]
+}
+
 @test "one-time: a fresh redeem after the link was consumed is rejected" {
   do_send
   run --separate-stderr bash "$SEND_SH" load "$URL" --server "$SERVER_URL"

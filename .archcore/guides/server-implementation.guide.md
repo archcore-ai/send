@@ -1,6 +1,6 @@
 ---
 title: "Implementing the Send Server (Go)"
-status: draft
+status: accepted
 ---
 
 ## Prerequisites

@@ -66,7 +66,7 @@ For `load` / `load-detail`, the script MUST split `<url>` into base + `#agekey=�
 `0` ok · `1` generic · `2` usage · `3` missing dependency · `4` secret blocked · `5` size blocked · `6` network/server · `7` decryption.
 
 ### Config / env
-- `SEND_SERVER_URL` (default server), overridable by `--server`.
+- `SEND_SERVER_URL` — default server URL. When unset/empty the scripts fall back to the built-in default `https://send.archcore.ai` (the public instance); overridable by `--server` or by setting `SEND_SERVER_URL` to a self-hosted instance.
 - Optional `SEND_TEAM_TOKEN` → `Authorization: Bearer` (team mode).
 - No persistent secrets written; key handling per [[security-privacy]].
 

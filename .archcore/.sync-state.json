@@ -216,6 +216,26 @@
       "source": "guides/self-host-deploy.guide.md",
       "target": "decisions/hosting-posture-availability.adr.md",
       "type": "implements"
+    },
+    {
+      "source": "specs/backend-http-api.spec.md",
+      "target": "archcore-send.prd.md",
+      "type": "implements"
+    },
+    {
+      "source": "specs/send-format.spec.md",
+      "target": "archcore-send.prd.md",
+      "type": "implements"
+    },
+    {
+      "source": "specs/skill-contract.spec.md",
+      "target": "archcore-send.prd.md",
+      "type": "implements"
+    },
+    {
+      "source": "specs/error-catalog.spec.md",
+      "target": "archcore-send.prd.md",
+      "type": "implements"
     }
   ]
 }

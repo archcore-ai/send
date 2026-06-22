@@ -45,7 +45,7 @@ func TestCoordinatorRoundTrip(t *testing.T) {
 	body := []byte("opaque-ciphertext")
 	id, pid := createWith(t, c, body)
 
-	if err := c.PutPart(ctx, id, pid, bytes.NewReader(body), PartMeta{SHA256: sha256hex(body)}); err != nil {
+	if _, err := c.PutPart(ctx, id, pid, bytes.NewReader(body), PartMeta{SHA256: sha256hex(body)}); err != nil {
 		t.Fatalf("PutPart: %v", err)
 	}
 	if err := c.FinalizeSend(ctx, id); err != nil {
@@ -73,7 +73,7 @@ func TestCoordinatorIntegrityRollback(t *testing.T) {
 	id, pid := createWith(t, c, body)
 
 	// Upload bytes that don't match the declaration → 422, and no part recorded.
-	if err := c.PutPart(ctx, id, pid, bytes.NewReader([]byte("tampered")), PartMeta{}); !errors.Is(err, ErrIntegrity) {
+	if _, err := c.PutPart(ctx, id, pid, bytes.NewReader([]byte("tampered")), PartMeta{}); !errors.Is(err, ErrIntegrity) {
 		t.Fatalf("PutPart mismatch = %v, want ErrIntegrity", err)
 	}
 	// Finalize must still see the part as missing.
@@ -92,13 +92,13 @@ func TestCoordinatorUploadToFinalizedIsConflict(t *testing.T) {
 	ctx := context.Background()
 	body := []byte("x")
 	id, pid := createWith(t, c, body)
-	if err := c.PutPart(ctx, id, pid, bytes.NewReader(body), PartMeta{}); err != nil {
+	if _, err := c.PutPart(ctx, id, pid, bytes.NewReader(body), PartMeta{}); err != nil {
 		t.Fatalf("PutPart: %v", err)
 	}
 	if err := c.FinalizeSend(ctx, id); err != nil {
 		t.Fatalf("FinalizeSend: %v", err)
 	}
-	if err := c.PutPart(ctx, id, pid, bytes.NewReader(body), PartMeta{}); !errors.Is(err, ErrConflict) {
+	if _, err := c.PutPart(ctx, id, pid, bytes.NewReader(body), PartMeta{}); !errors.Is(err, ErrConflict) {
 		t.Errorf("upload after finalize = %v, want ErrConflict", err)
 	}
 }
@@ -108,7 +108,7 @@ func TestCoordinatorGetPartRequiresGrant(t *testing.T) {
 	ctx := context.Background()
 	body := []byte("x")
 	id, pid := createWith(t, c, body)
-	_ = c.PutPart(ctx, id, pid, bytes.NewReader(body), PartMeta{})
+	_, _ = c.PutPart(ctx, id, pid, bytes.NewReader(body), PartMeta{})
 	_ = c.FinalizeSend(ctx, id)
 	if _, err := c.GetPart(ctx, id, pid, "red_bogus"); !errors.Is(err, ErrInvalidGrant) {
 		t.Errorf("GetPart with bad token = %v, want ErrInvalidGrant", err)
@@ -120,7 +120,7 @@ func TestCoordinatorOrphanSweep(t *testing.T) {
 	ctx := context.Background()
 	// Publish a blob with no corresponding part row (simulates a crash mid-upload).
 	orphan := []byte("orphan")
-	if err := c.blob.Put(ctx, StorageKey("snd_ghost", "part_0001"), bytes.NewReader(orphan), want(orphan), 1<<20); err != nil {
+	if _, err := c.blob.Put(ctx, StorageKey("snd_ghost", "part_0001"), bytes.NewReader(orphan), want(orphan), 1<<20); err != nil {
 		t.Fatalf("seed orphan: %v", err)
 	}
 	n, err := c.OrphanSweep(ctx)

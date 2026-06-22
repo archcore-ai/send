@@ -1,6 +1,6 @@
 ---
 title: "Add a new send part kind"
-status: draft
+status: accepted
 ---
 
 ## What

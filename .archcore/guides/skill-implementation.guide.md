@@ -1,12 +1,12 @@
 ---
 title: "Implementing the Send Skill (client)"
-status: draft
+status: accepted
 ---
 
 ## Prerequisites
 
 - `age` installed (client crypto); `curl` + `gzip` (or PowerShell equivalents).
-- A reachable Send server ([[backend-http-api]]); default via `SEND_SERVER_URL`.
+- A reachable Send server ([[backend-http-api]]); defaults to the built-in `https://send.archcore.ai`, overridable via `SEND_SERVER_URL` or `--server`.
 - Familiarity with the Agent Skills format (`SKILL.md` + scripts/references/assets).
 - Contracts to obey: [[skill-contract]], [[send-format]]. Rules: [[content-policy]], [[security-privacy]], [[size-limits]].
 

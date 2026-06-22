@@ -59,8 +59,9 @@ Flags forwarded to the script: `--ttl <dur>` (default `24h`, max `7d`),
 `--one-time` / `--no-one-time` (default one-time), `--yes`, `--dry-run`,
 `--allow-secrets`, `--include-large`, `--server <url>`.
 
-The server URL comes from `SEND_SERVER_URL` (or `--server`). For team mode, set
-`SEND_TEAM_TOKEN` (sent as `Authorization: Bearer`).
+The server URL defaults to `https://send.archcore.ai` (the public instance);
+override it with `SEND_SERVER_URL` or `--server` to use a self-hosted server. For
+team mode, set `SEND_TEAM_TOKEN` (sent as `Authorization: Bearer`).
 
 ## Send mode — the fast path (default)
 

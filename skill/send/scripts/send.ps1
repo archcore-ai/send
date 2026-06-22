@@ -23,6 +23,9 @@ try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::
 $Script:SendVersion   = 'send.v1'
 $Script:DefaultTtl    = '24h'
 $Script:MaxTtlSeconds = 7 * 24 * 3600
+# Default Send server. Used when $env:SEND_SERVER_URL is unset/empty and no
+# -Server is given. Override with SEND_SERVER_URL or -Server for a self-hosted instance.
+$Script:DefaultServer = 'https://send.archcore.ai'
 $Script:CompactSoft   = 30 * 1024
 $Script:CompactHard   = 50 * 1024
 $Script:EvidenceSoft  = 300 * 1024
@@ -440,7 +443,7 @@ function Get-DecryptedPart { param($Ctx, $Tid, $IdFile, $Token)
 # load
 # ==========================================================================
 function Invoke-Load { param($Url, $Opt)
-  $ctx = Split-LoadUrl $Url $Opt.Server
+  $ctx = Split-LoadUrl $Url $Opt.ServerOverride
   Require-Age
   New-Tmp
   $idfile = Join-Path $Script:Tmp 'id.key'
@@ -479,7 +482,7 @@ function Invoke-Load { param($Url, $Opt)
 # load-detail
 # ==========================================================================
 function Invoke-LoadDetail { param($Url, $PartId, $Opt)
-  $ctx = Split-LoadUrl $Url $Opt.Server
+  $ctx = Split-LoadUrl $Url $Opt.ServerOverride
   Require-Age
   New-Tmp
   $idfile = Join-Path $Script:Tmp 'id.key'
@@ -513,7 +516,7 @@ send.ps1 — Archcore Send skill client
 
 function Main { param([string[]]$Argv)
   $opt = [pscustomobject]@{
-    Server = $env:SEND_SERVER_URL; Ttl = $Script:DefaultTtl; OneTime = $true
+    Server = $(if ($env:SEND_SERVER_URL) { $env:SEND_SERVER_URL } else { $Script:DefaultServer }); ServerOverride = ''; Ttl = $Script:DefaultTtl; OneTime = $true
     Yes = $false; AllowSecrets = $false; IncludeLarge = $false; DryRun = $false
   }
   if ($Argv.Count -lt 1) { Show-Usage; Emit-Error 'BAD_REQUEST' 'no subcommand' 'see usage above' 2 }
@@ -528,7 +531,7 @@ function Main { param([string[]]$Argv)
       '^-AllowSecrets$|^--allow-secrets$'{ $opt.AllowSecrets = $true }
       '^-IncludeLarge$|^--include-large$'{ $opt.IncludeLarge = $true }
       '^-DryRun$|^--dry-run$'            { $opt.DryRun = $true }
-      '^-Server$|^--server$'             { $opt.Server = $Argv[++$i] }
+      '^-Server$|^--server$'             { $opt.Server = $Argv[++$i]; $opt.ServerOverride = $opt.Server }
       '^-h$|^--help$'                    { Show-Usage; exit 0 }
       '^-'                               { Emit-Error 'BAD_REQUEST' "unknown flag: $($Argv[$i])" 'see usage' 2 }
       default                            { [void]$positional.Add($Argv[$i]) }

@@ -81,10 +81,11 @@ for d in .claude .cursor .opencode .windsurf; do
 done
 ```
 
-Then set the server and verify from inside the agent:
+Then verify from inside the agent (defaults to the public
+`https://send.archcore.ai`; set `SEND_SERVER_URL` only to override):
 
 ```sh
-export SEND_SERVER_URL="https://send.example.com"   # or pass --server
+export SEND_SERVER_URL="https://send.example.com"   # optional — or pass --server
 /send --doctor      # checks age / curl / gzip + server reachability
 ```
 
@@ -118,6 +119,7 @@ export SEND_SERVER_URL="https://send.example.com"   # or pass --server
   `winget install FiloSottile.age` · distro package
 - `curl` + `gzip` (preinstalled on macOS/Linux; PowerShell uses `Invoke-WebRequest`
   + built-in compression)
-- A reachable Send server (`SEND_SERVER_URL` or `--server`)
+- A reachable Send server (defaults to `https://send.archcore.ai`; override with
+  `SEND_SERVER_URL` or `--server`)
 
 Run `/send --doctor` (or `send.sh doctor`) — it lists exactly what's missing.

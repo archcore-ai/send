@@ -32,8 +32,12 @@ func TestBlobPutAndOpen(t *testing.T) {
 	b := newBlob(t)
 	ctx := context.Background()
 	data := []byte("ciphertext-bytes")
-	if err := b.Put(ctx, "snd_x/part_0001", bytes.NewReader(data), want(data), 1<<20); err != nil {
+	n, err := b.Put(ctx, "snd_x/part_0001", bytes.NewReader(data), want(data), 1<<20)
+	if err != nil {
 		t.Fatalf("Put: %v", err)
+	}
+	if int(n) != len(data) {
+		t.Fatalf("Put returned n=%d, want %d", n, len(data))
 	}
 	rc, err := b.Open(ctx, "snd_x/part_0001")
 	if err != nil {
@@ -51,7 +55,7 @@ func TestBlobIntegrityMismatchNotPublished(t *testing.T) {
 	ctx := context.Background()
 	data := []byte("hello")
 	bad := PartMeta{EncryptedSize: int64(len(data)), SHA256: sha256hex([]byte("different"))}
-	if err := b.Put(ctx, "snd_x/p", bytes.NewReader(data), bad, 1<<20); !errors.Is(err, ErrIntegrity) {
+	if _, err := b.Put(ctx, "snd_x/p", bytes.NewReader(data), bad, 1<<20); !errors.Is(err, ErrIntegrity) {
 		t.Fatalf("Put sha mismatch = %v, want ErrIntegrity", err)
 	}
 	if _, err := b.Open(ctx, "snd_x/p"); !errors.Is(err, ErrNotFound) {
@@ -63,7 +67,7 @@ func TestBlobSizeMismatch(t *testing.T) {
 	b := newBlob(t)
 	data := []byte("hello")
 	bad := PartMeta{EncryptedSize: 999, SHA256: sha256hex(data)}
-	if err := b.Put(context.Background(), "snd_x/p", bytes.NewReader(data), bad, 1<<20); !errors.Is(err, ErrIntegrity) {
+	if _, err := b.Put(context.Background(), "snd_x/p", bytes.NewReader(data), bad, 1<<20); !errors.Is(err, ErrIntegrity) {
 		t.Fatalf("Put size mismatch = %v, want ErrIntegrity", err)
 	}
 }
@@ -72,7 +76,7 @@ func TestBlobTooLarge(t *testing.T) {
 	b := newBlob(t)
 	ctx := context.Background()
 	data := bytes.Repeat([]byte("x"), 100)
-	if err := b.Put(ctx, "snd_x/p", bytes.NewReader(data), want(data), 50); !errors.Is(err, ErrPartTooLarge) {
+	if _, err := b.Put(ctx, "snd_x/p", bytes.NewReader(data), want(data), 50); !errors.Is(err, ErrPartTooLarge) {
 		t.Fatalf("Put over limit = %v, want ErrPartTooLarge", err)
 	}
 	if _, err := b.Open(ctx, "snd_x/p"); !errors.Is(err, ErrNotFound) {
@@ -84,7 +88,7 @@ func TestBlobTraversalRejected(t *testing.T) {
 	b := newBlob(t)
 	ctx := context.Background()
 	for _, key := range []string{"../escape", "/etc/passwd", "a/../../b", ""} {
-		if err := b.Put(ctx, key, bytes.NewReader([]byte("x")), want([]byte("x")), 1<<20); err == nil {
+		if _, err := b.Put(ctx, key, bytes.NewReader([]byte("x")), want([]byte("x")), 1<<20); err == nil {
 			t.Errorf("Put(%q) accepted a traversal/invalid key", key)
 		}
 	}
@@ -95,7 +99,7 @@ func TestBlobListAndDelete(t *testing.T) {
 	ctx := context.Background()
 	for _, k := range []string{"snd_a/manifest", "snd_a/part_0001", "snd_b/manifest"} {
 		d := []byte(k)
-		if err := b.Put(ctx, k, bytes.NewReader(d), want(d), 1<<20); err != nil {
+		if _, err := b.Put(ctx, k, bytes.NewReader(d), want(d), 1<<20); err != nil {
 			t.Fatalf("Put %s: %v", k, err)
 		}
 	}
@@ -124,7 +128,7 @@ func TestBlobIdempotentOverwrite(t *testing.T) {
 	ctx := context.Background()
 	data := []byte("same-bytes")
 	for range 2 {
-		if err := b.Put(ctx, "snd_x/p", bytes.NewReader(data), want(data), 1<<20); err != nil {
+		if _, err := b.Put(ctx, "snd_x/p", bytes.NewReader(data), want(data), 1<<20); err != nil {
 			t.Fatalf("Put: %v", err)
 		}
 	}

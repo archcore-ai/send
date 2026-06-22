@@ -221,6 +221,65 @@ func TestValidateGrant(t *testing.T) {
 	}
 }
 
+func TestDeleteExpiredReapsStaleUnfinished(t *testing.T) {
+	st, cl := newState(t)
+	ctx := context.Background()
+
+	// An unfinished ("creating") send with no parts uploaded.
+	rec, err := st.CreateSend(ctx, CreateSendInput{Version: "send.v1", OneTime: true, TTL: time.Hour, Parts: twoParts()})
+	if err != nil {
+		t.Fatalf("CreateSend: %v", err)
+	}
+
+	// Still fresh (well under the TTL and creatingMaxAge): not reaped yet.
+	if n, _, err := st.DeleteExpired(ctx, cl.now()); err != nil || n != 0 {
+		t.Fatalf("premature reap: n=%d err=%v", n, err)
+	}
+
+	// Past creatingMaxAge but still within the (1h) TTL: reaped as a stale upload,
+	// not as an expired send.
+	cl.advance(creatingMaxAge + time.Minute)
+	n, keys, err := st.DeleteExpired(ctx, cl.now())
+	if err != nil {
+		t.Fatalf("DeleteExpired: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("reaped sends = %d, want 1", n)
+	}
+	if len(keys) != 2 {
+		t.Errorf("purge keys = %d, want 2", len(keys))
+	}
+	if _, err := st.GetSendMeta(ctx, rec.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("stale unfinished send still present: %v", err)
+	}
+}
+
+func TestDeleteExpiredReapsConsumedPastGrant(t *testing.T) {
+	st, cl := newState(t)
+	ctx := context.Background()
+	id := makeFinalized(t, st, true, time.Hour) // 1h TTL, well beyond the grant window
+
+	if _, err := st.RedeemSend(ctx, id); err != nil {
+		t.Fatalf("redeem: %v", err)
+	}
+	// Within the grant window the consumed send is still downloadable, so not reaped.
+	if n, _, err := st.DeleteExpired(ctx, cl.now()); err != nil || n != 0 {
+		t.Fatalf("premature reap of consumed send: n=%d err=%v", n, err)
+	}
+	// Past the grant window (but still before TTL) the consumed one-time send is reaped.
+	cl.advance(11 * time.Minute)
+	n, _, err := st.DeleteExpired(ctx, cl.now())
+	if err != nil {
+		t.Fatalf("DeleteExpired: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("reaped sends = %d, want 1", n)
+	}
+	if _, err := st.GetSendMeta(ctx, id); !errors.Is(err, ErrNotFound) {
+		t.Errorf("consumed send past grant still present: %v", err)
+	}
+}
+
 func TestDeleteExpired(t *testing.T) {
 	st, cl := newState(t)
 	ctx := context.Background()

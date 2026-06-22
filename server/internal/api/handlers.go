@@ -145,12 +145,12 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	declared := store.PartMeta{PartID: partID, SHA256: sha}
 
-	err := s.store.PutPart(r.Context(), id, partID, r.Body, declared)
+	n, err := s.store.PutPart(r.Context(), id, partID, r.Body, declared)
 	if err != nil {
 		writeStoreError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "part_id": partID, "encrypted_size": max(r.ContentLength, 0)})
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "part_id": partID, "encrypted_size": n})
 }
 
 func (s *Server) handleFinalize(w http.ResponseWriter, r *http.Request) {
@@ -186,11 +186,9 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, err)
 		return
 	}
-	parts := make([]map[string]any, 0, len(meta.Parts))
+	parts := make([]partBrief, 0, len(meta.Parts))
 	for _, p := range meta.Parts {
-		parts = append(parts, map[string]any{
-			"part_id": p.PartID, "encrypted_size": p.EncryptedSize,
-		})
+		parts = append(parts, partBrief{PartID: p.PartID, EncryptedSize: p.EncryptedSize})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"id":                   meta.ID,
