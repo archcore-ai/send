@@ -8,7 +8,8 @@ SERVER_DIR := server
 SENDD_BIN  := tests/bin/sendd
 
 .PHONY: help lint test test-unit test-e2e verify-no-binaries doctor \
-        server-build server-vet server-test sendd-e2e docker-build test-all
+        server-build server-vet server-test sendd-e2e docker-build test-all \
+        deploy
 
 help:
 	@printf '%s\n' \
@@ -26,7 +27,10 @@ help:
 	  '  make server-test          go test ./... -race' \
 	  '  make sendd-e2e            bats e2e against the real Go server' \
 	  '  make docker-build         build the sendd container image' \
-	  '  make test-all             skill tests + server tests + sendd-e2e'
+	  '  make test-all             skill tests + server tests + sendd-e2e' \
+	  '' \
+	  'Deploy:' \
+	  '  make deploy               build + roll the stack (deploy/deploy.sh; ARGS="--skip-tests" to pass flags)'
 
 lint:
 	shellcheck $(SEND_SH)
@@ -72,3 +76,9 @@ docker-build:
 	docker build -t sendd:local $(SERVER_DIR)
 
 test-all: test server-test sendd-e2e
+
+# --- Deploy ---
+# One-command deploy. Configure deploy/deploy.env first (see deploy/deploy.env.example).
+# Pass flags through ARGS, e.g.: make deploy ARGS="--skip-tests --domain send.example.com"
+deploy:
+	./deploy/deploy.sh $(ARGS)
