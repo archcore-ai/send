@@ -9,6 +9,17 @@ status: accepted
 - Docker + Docker Compose on the box. The reference deploy builds `sendd` from source ([[server-implementation]]); no prebuilt image is required.
 - Storage choice: filesystem (default) or S3-compatible object storage ([[storage-abstraction]]).
 
+## Automated deploy (recommended)
+
+The repo ships one idempotent deploy script — `deploy/deploy.sh` — that performs the whole roll: pull the branch, point Caddy at the canonical domain, `docker compose up -d --build` (stamping the image with the git version/commit), and poll `/healthz`. It runs either from your workstation (driving the box over SSH) or directly on the box — same script, controlled by whether `DEPLOY_SSH` is set.
+
+```bash
+cp deploy/deploy.env.example deploy/deploy.env   # set DEPLOY_SSH, DEPLOY_REMOTE_PATH, SEND_DOMAIN
+./deploy/deploy.sh                               # or: make deploy   (ARGS="--dry-run" to preview)
+```
+
+`deploy/deploy.env` is **git-ignored**: the SSH target and host paths live there, never in tracked files ([[security-privacy]]) — keep real hosts out of `deploy.env.example`. The script is safe to re-run; it gates on `make test-all`, warns on unpushed commits and unresolved DNS, and aborts if the box can't fast-forward or the health check never goes green. Useful flags: `--dry-run`, `--skip-tests`, `--no-build`, `--domain`, `--branch`. The manual steps below are exactly what it automates — read them to understand or operate the box by hand.
+
 ## Steps
 
 ### 1. Point DNS at the box
@@ -26,7 +37,7 @@ Copy `deploy/.env.example` to `deploy/.env` and set `SEND_DOMAIN` + `SEND_PUBLIC
 cd deploy
 docker compose up -d --build
 ```
-Compose builds the static `sendd` binary, runs it on an internal port, and puts Caddy in front for automatic TLS (Let's Encrypt). First certificate issuance takes a few seconds. The same binary can also run behind any other TLS-terminating reverse proxy, or fully managed object storage instead of local disk.
+Compose builds the static `sendd` binary, runs it on an internal port, and puts Caddy in front for automatic TLS (Let's Encrypt). First certificate issuance takes a few seconds. The same binary can also run behind any other TLS-terminating reverse proxy, or fully managed object storage instead of local disk. For day-to-day rolls, prefer `deploy/deploy.sh` (above), which wraps these steps with a test gate and health check.
 
 ### 4. Object-storage option (any S3-compatible)
 Set `SEND_S3_ENDPOINT/BUCKET/REGION/ACCESS_KEY/SECRET_KEY` to keep encrypted parts off local disk. The bucket MUST be **private** — no public listing, no long-lived public object URLs ([[security-privacy]]). Swappable across S3-compatible providers without code changes ([[storage-abstraction]]).

@@ -26,3 +26,8 @@ id_rsa
 *.pem
 *.key
 .env
+
+# Deploy config (SSH target / host paths) — keep infra details out of git.
+# *.env catches any environment file at any depth; *.env.example stays tracked.
+deploy/deploy.env
+*.env

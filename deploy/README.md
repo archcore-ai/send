@@ -10,6 +10,53 @@ have a self-hosted, one-time, end-to-end-encrypted send service you can hand lin
 > only endpoint where broad reach matters; pair it with a direct fallback. See
 > `.archcore/decisions/hosting-posture-availability.adr.md`.
 
+## One-command deploy (`deploy.sh`)
+
+`deploy/deploy.sh` does the whole roll: pull the branch, point the server at the canonical
+domain, `docker compose up -d --build` (stamping the image with the git version/commit), and
+wait for `/healthz`. It's **idempotent** — safe to re-run.
+
+It runs in two modes from the **same** script:
+
+- **Remote** (run from your laptop) — set `DEPLOY_SSH`; the build + compose happen on the box
+  over SSH.
+- **Local** (run on the box) — leave `DEPLOY_SSH` empty.
+
+### First-time setup
+
+```bash
+cp deploy/deploy.env.example deploy/deploy.env
+# edit deploy/deploy.env: set DEPLOY_SSH, DEPLOY_REMOTE_PATH, SEND_DOMAIN
+```
+
+`deploy/deploy.env` is **git-ignored** — your SSH target and host paths live there and never
+get committed. Keep the real values out of `deploy.env.example`.
+
+### Deploy
+
+```bash
+./deploy/deploy.sh            # full deploy: test gate → roll → health check
+make deploy                   # same thing via the Makefile (pass flags with ARGS="...")
+```
+
+Useful flags:
+
+| Flag | Effect |
+|---|---|
+| `--dry-run` | print the plan and stop before touching the box |
+| `--skip-tests` | skip the local `make test-all` gate |
+| `--no-build` | `up -d` without rebuilding the image |
+| `--domain D` | override the canonical domain for this run |
+| `--branch B` | deploy a branch other than `main` |
+| `--ssh T` / `--remote-path P` | override the remote target ad hoc |
+
+The script refuses surprises: it warns if local commits aren't pushed (the box pulls `origin`),
+warns if the domain doesn't resolve yet (Caddy's ACME needs DNS first), and aborts if the box
+can't fast-forward or the health check never goes green.
+
+> Prefer to drive it by hand the first time? The manual steps below are exactly what the script
+> automates.
+
 ## Prerequisites
 
 - A small VPS (1 vCPU / 1–2 GB is plenty) with a **public IP** and Docker + Docker Compose.
